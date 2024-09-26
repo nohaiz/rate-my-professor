@@ -12,7 +12,9 @@ require("./config/database.js");
 // PORT
 const port = process.env.PORT ? process.env.PORT : "3000";
 
-// IMPORTED CONTROLLERS
+// IMPORTED ROUTES
+
+const authorizationRoute = require('./routes/authorizationRoute.js')
 
 
 // MIDDLEWARE
@@ -23,6 +25,7 @@ app.use(morgan("dev"));
 
 // ROUTES
 
+app.use('/', authorizationRoute);
 
 app.listen(port, () => {
   console.log("The express app is ready!");
