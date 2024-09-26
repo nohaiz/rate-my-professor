@@ -33,6 +33,9 @@ const signUp = async (req, res, next) => {
     if (password !== confirmPassword) {
       return res.status(400).json({ error: 'Confirm password and password needs to match' });
     }
+    if (isProfessor && isStudent || !isProfessor && !isStudent) {
+      return res.status(400).json({ error: 'The user cannot be both a student and a professor.' });
+    }
 
     let studentId;
     let professorId;
@@ -89,6 +92,30 @@ const signUp = async (req, res, next) => {
 
 const signIn = async (req, res, next) => {
 
+  try {
+    const { email, password } = req.body
+
+    const userInDatabase = await User.findOne({ email: email });
+
+    if (!userInDatabase) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    if (!bcrypt.compareSync(password, userInDatabase.hashedPassword)) {
+      return res.status(400).json({ error: 'The provided password is incorrect.' });
+    }
+
+    let userType = {};
+    const studentId = userInDatabase.studentAccount;
+    const professorId = userInDatabase.professorAccount;
+
+    studentId ? userType.student = studentId : null;
+    professorId ? userType.professor = professorId : null;
+
+    const token = createToken(userType);
+    res.status(200).json({ token });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
 }
 
 module.exports = { signUp, signIn }
