@@ -5,29 +5,27 @@ const studentAccountSchema = mongoose.Schema({
   firstName: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    match: /^[^\s]+$/,
   },
   lastName: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    match: /^[^\s]+$/,
   },
   institution: {
-    type: String,
-    required: true,
-    trim: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Institution",
   },
+  fieldOfStudy: [{
+    type: String,
+    trim: true,
+  }],
   GPA: {
     type: Number,
-    required: true,
     min: 0.0,
     max: 4.0,
-    validate: {
-      validator: function (v) {
-        return v >= 0.0 && v <= 4.0;
-      },
-      message: 'GPA must be between 0.0 and 4.0.'
-    }
   }
 })
 

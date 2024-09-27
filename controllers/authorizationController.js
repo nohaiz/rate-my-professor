@@ -19,7 +19,7 @@ const signUp = async (req, res, next) => {
   session.startTransaction();
 
   try {
-    const { email, password, confirmPassword, isProfessor, isStudent, firstName, lastName, bio, department, courses, institution, GPA } = req.body
+    const { email, password, confirmPassword, isProfessor, isStudent, firstName, lastName, institution } = req.body
 
     const userInDatabase = await User.findOne({ email: email });
     if (userInDatabase) {
@@ -44,8 +44,6 @@ const signUp = async (req, res, next) => {
       let studentPayLoad = {
         firstName: firstName,
         lastName: lastName,
-        institution: institution,
-        GPA: GPA
       }
       const student = await StudentAccount.create([studentPayLoad], { session });
       studentId = student[0]._id;
@@ -55,10 +53,7 @@ const signUp = async (req, res, next) => {
       let professorPayLoad = {
         firstName: firstName,
         lastName: lastName,
-        bio: bio,
         institution: institution,
-        department: department,
-        courses: courses,
       }
       const professor = await ProfessorAccount.create([professorPayLoad], { session });
       professorId = professor[0]._id;
