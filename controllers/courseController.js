@@ -1,25 +1,23 @@
 const Course = require('../models/course');
 
+const textFormatting = require('../utils/textFormatting');
+
 const createCourse = async (req, res, next) => {
   // NEEDS TO CHECK FOR ADMIN
   try {
-    const { title, code, credits } = req.body
+    const { title, code, credits, professors } = req.body
 
-    let titleFormatting;
-    let codeFormatting;
+    const { formattedText, formattedCode } = textFormatting(title, code);
 
-    titleFormatting = title.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
-
-    codeFormatting = code.toUpperCase();
-
-    const courseInDatabase = await Course.findOne({ code: code });
+    const courseInDatabase = await Course.findOne({ code: formattedCode });
     if (courseInDatabase) {
       return res.status(400).json({ error: 'This course has already been added.' })
     }
     const payLoad = {
-      title: titleFormatting,
-      code: codeFormatting,
+      title: formattedText,
+      code: formattedCode,
       credits: credits,
+      professors: professors.map(id => new mongoose.Types.ObjectId(id)),
     }
 
     const course = await Course.create(payLoad);
@@ -42,7 +40,8 @@ const indexCourse = async (req, res, next) => {
     const courses = await Course.find({})
       .sort(options.sort)
       .skip((options.page - 1) * options.limit)
-      .limit(options.limit);
+      .limit(options.limit)
+      .populate('professors');
 
     if (courses.length === 0) {
       return res.status(400).json({ error: 'There are currently no courses available.' });
@@ -60,7 +59,7 @@ const getCourse = async (req, res, next) => {
   // NEEDS TO CHECK FOR ADMIN
   try {
     const { id } = req.params
-    const course = await Course.findById(id);
+    const course = await Course.findById(id).populate('professors');;
 
     if (!course) {
       return res.status(400).json({ error: 'This course is not available.' });
@@ -75,15 +74,11 @@ const updateCourse = async (req, res, next) => {
   // NEEDS TO CHECK FOR ADMIN
   try {
     const { id } = req.params;
-    const { title, code, credits } = req.body;
+    const { title, code, credits, professors } = req.body;
 
-    const titleFormatting = title.split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+    const { formattedText, formattedCode } = textFormatting(title, code);
 
-    const codeFormatting = code.toUpperCase();
-
-    const existingCourse = await Course.findOne({ code: codeFormatting });
+    const existingCourse = await Course.findOne({ code: formattedCode });
 
     if (existingCourse && existingCourse._id.toString() !== id) {
       return res.status(400).json({ error: 'This course code is already in use.' });
@@ -91,14 +86,18 @@ const updateCourse = async (req, res, next) => {
 
     const course = await Course.findByIdAndUpdate(
       id,
-      { title: titleFormatting, code: codeFormatting, credits },
+      {
+        title: formattedText,
+        code: formattedCode,
+        credits,
+        professors: professors.map(id => new mongoose.Types.ObjectId(id)),
+      },
       { new: true, runValidators: true }
     );
 
     if (!course) {
       return res.status(404).json({ error: 'Course not found.' });
     }
-
     return res.status(200).json({ course });
   } catch (error) {
     return res.status(500).json({ message: error.message });

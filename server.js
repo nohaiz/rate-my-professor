@@ -17,6 +17,7 @@ const port = process.env.PORT ? process.env.PORT : "3000";
 
 const authorizationRoute = require('./routes/authorizationRoute.js');
 const adminCourseRoute = require('./routes/adminCourseRoute.js');
+const adminDepartmentRoute = require('./routes/adminDepartmentRoute.js');
 
 // MIDDLEWARE
 app.use(cors());
@@ -29,6 +30,7 @@ app.use('/', authorizationRoute);
 
 // app.use(verifyToken);
 app.use('/admin/courses', adminCourseRoute)
+app.use('/admin/departments', adminDepartmentRoute)
 
 app.listen(port, () => {
   console.log("The express app is ready!");

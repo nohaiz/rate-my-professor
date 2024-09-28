@@ -16,7 +16,11 @@ const courseSchema = new mongoose.Schema({
     type: Number,
     min: 1,
     max: 5,
-  }
+  },
+  professors: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProfessorAccount',
+  }],
 }, { timestamps: true });
 
 const Course = mongoose.model('Course', courseSchema);
