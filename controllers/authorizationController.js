@@ -69,8 +69,14 @@ const signUp = async (req, res, next) => {
 
     let userType = {};
 
-    professorId ? userType.professor = professorId : null;
-    studentId ? userType.student = studentId : null;
+    if (professorId) {
+      userType.professorId = professorId;
+      userType.role = 'professor';
+    }
+    if (studentId) {
+      userType.studentId = studentId;
+      userType.role = 'student';
+    }
 
     const token = createToken(userType);
     await session.commitTransaction();
@@ -103,8 +109,14 @@ const signIn = async (req, res, next) => {
     const studentId = userInDatabase.studentAccount;
     const professorId = userInDatabase.professorAccount;
 
-    studentId ? userType.student = studentId : null;
-    professorId ? userType.professor = professorId : null;
+    if (professorId) {
+      userType.professorId = professorId;
+      userType.role = 'professor';
+    }
+    if (studentId) {
+      userType.studentId = studentId;
+      userType.role = 'student';
+    }
 
     const token = createToken(userType);
     res.status(200).json({ token });
