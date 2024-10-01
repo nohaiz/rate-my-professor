@@ -16,6 +16,17 @@ const createDepartment = async (req, res, next) => {
     if (departmentInDatabase) {
       return res.status(400).json({ error: 'This department has already been added.' })
     }
+
+    const uniqueCourses = new Set();
+    const invalidCourseIds = [];
+
+    for (const id of courses) {
+      uniqueCourses.has(id) ? invalidCourseIds.push(id) : uniqueCourses.add(id);
+    }
+    if (invalidCourseIds.length > 0) {
+      return res.status(400).json({ error: 'Duplicate course IDs found.', duplicates: invalidCourseIds });
+    }
+
     const courseInDatabase = await Promise.all(
       courses.map(async (id) => {
         const courseExist = await Course.findById(id);
@@ -82,6 +93,7 @@ const getDepartment = async (req, res, next) => {
 const updateDepartment = async (req, res, next) => {
   // NEEDS TO CHECK FOR ADMIN
   try {
+    const { id } = req.params;
     const { name, courses } = req.body
     const { formattedText } = textFormatting(name);
 
@@ -89,6 +101,27 @@ const updateDepartment = async (req, res, next) => {
 
     if (existingDepartment && existingDepartment._id.toString() !== id) {
       return res.status(400).json({ error: 'This department name is already in use.' });
+    }
+
+    const uniqueCourses = new Set();
+    const invalidCourseIds = [];
+
+    for (const id of courses) {
+      uniqueCourses.has(id) ? invalidCourseIds.push(id) : uniqueCourses.add(id);
+    }
+    if (invalidCourseIds.length > 0) {
+      return res.status(400).json({ error: 'Duplicate course IDs found.', duplicates: invalidCourseIds });
+    }
+
+    const courseInDatabase = await Promise.all(
+      courses.map(async (id) => {
+        const courseExist = await Course.findById(id);
+        return courseExist ? true : false;
+      })
+    )
+
+    if (courseInDatabase.includes(false)) {
+      return res.status(400).json({ error: 'One or more course IDs are invalid.' });
     }
 
     const department = await Department.findByIdAndUpdate(
