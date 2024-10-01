@@ -17,7 +17,7 @@ const createCourse = async (req, res, next) => {
       title: formattedText,
       code: formattedCode,
       credits: credits,
-      professors: professors.map(id => new mongoose.Types.ObjectId(id)),
+      professors: professors ? professors.map(id => new mongoose.Types.ObjectId(id)) : null,
     }
 
     const course = await Course.create(payLoad);

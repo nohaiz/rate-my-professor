@@ -1,7 +1,10 @@
-const Department = require('../models/department');
 const mongoose = require('mongoose');
 
+const Course = require('../models/course');
+const Department = require('../models/department');
+
 const textFormatting = require('../utils/textFormatting');
+
 
 const createDepartment = async (req, res, next) => {
   // NEEDS TO CHECK FOR ADMIN
@@ -12,6 +15,16 @@ const createDepartment = async (req, res, next) => {
 
     if (departmentInDatabase) {
       return res.status(400).json({ error: 'This department has already been added.' })
+    }
+    const courseInDatabase = await Promise.all(
+      courses.map(async (id) => {
+        const courseExist = await Course.findById(id);
+        return courseExist ? true : false;
+      })
+    )
+
+    if (courseInDatabase.includes(false)) {
+      return res.status(400).json({ error: 'One or more course IDs are invalid.' });
     }
 
     const payLoad = {

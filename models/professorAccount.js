@@ -36,10 +36,9 @@ const professorAccountSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  institution: {
+  department: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Institution",
-    required: true,
+    ref: "Department",
   },
   averageRating: {
     type: Number,
