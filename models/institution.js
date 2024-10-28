@@ -20,7 +20,7 @@ const institutionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
   }],
-});
+}, { timestamps: true, });
 
 const Institution = mongoose.model('Institution', institutionSchema);
 

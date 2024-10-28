@@ -6,6 +6,10 @@ const reviewSchema = new mongoose.Schema({
     ref: 'StudentAccount',
     required: true
   },
+  courseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Course',
+  },
   text: {
     type: String,
     required: true,
@@ -17,7 +21,7 @@ const reviewSchema = new mongoose.Schema({
     max: 5,
     required: true
   },
-});
+}, { timestamps: true, });
 
 const professorAccountSchema = new mongoose.Schema({
   firstName: {
@@ -36,9 +40,9 @@ const professorAccountSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  department: {
+  institution: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Department",
+    ref: "Institution",
   },
   averageRating: {
     type: Number,
@@ -50,7 +54,11 @@ const professorAccountSchema = new mongoose.Schema({
     type: [reviewSchema],
     default: [],
   },
-});
+  reviewCount: {
+    type: Number,
+    default: 0,
+  },
+}, { timestamps: true, });
 
 const ProfessorAccount = mongoose.model('ProfessorAccount', professorAccountSchema);
 

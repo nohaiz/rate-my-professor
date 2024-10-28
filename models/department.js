@@ -10,7 +10,7 @@ const departmentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course',
   }],
-});
+}, { timestamps: true, });
 
 const Department = mongoose.model('Department', departmentSchema);
 
