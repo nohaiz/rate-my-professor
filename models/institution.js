@@ -16,7 +16,7 @@ const institutionSchema = new mongoose.Schema({
     enum: ['University', 'College', 'Community College', 'Other'],
     required: true,
   },
-  department: [{
+  departments: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
   }],

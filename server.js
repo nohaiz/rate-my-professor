@@ -33,7 +33,7 @@ app.use('/', authorizationRoute);
 // app.use(verifyToken);
 app.use('/admin/courses', adminCourseRoute)
 app.use('/admin/departments', adminDepartmentRoute)
-app.use('/admin/institute', adminInstituteRoute)
+app.use('/admin/institutes', adminInstituteRoute)
 
 
 app.listen(port, () => {
