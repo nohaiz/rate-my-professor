@@ -12,7 +12,6 @@ const ProfessorAccount = require('../models/professorAccount');
 
 const { createToken } = require('../utils/createToken')
 
-
 const signUp = async (req, res, next) => {
 
   const session = await User.startSession();

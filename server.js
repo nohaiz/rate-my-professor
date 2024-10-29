@@ -19,6 +19,7 @@ const authorizationRoute = require('./routes/authorizationRoute.js');
 const adminCourseRoute = require('./routes/adminCourseRoute.js');
 const adminDepartmentRoute = require('./routes/adminDepartmentRoute.js');
 const adminInstituteRoute = require('./routes/adminInstituteRoute.js');
+const adminUserRoute = require('./routes/adminUserRoute.js')
 
 
 // MIDDLEWARE
@@ -34,6 +35,7 @@ app.use('/', authorizationRoute);
 app.use('/admin/courses', adminCourseRoute)
 app.use('/admin/departments', adminDepartmentRoute)
 app.use('/admin/institutes', adminInstituteRoute)
+app.use('/admin/user', adminUserRoute)
 
 
 app.listen(port, () => {

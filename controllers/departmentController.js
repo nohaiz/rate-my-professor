@@ -5,7 +5,6 @@ const Department = require('../models/department');
 
 const textFormatting = require('../utils/textFormatting');
 
-
 const createDepartment = async (req, res, next) => {
   // NEEDS TO CHECK FOR ADMIN
   try {
