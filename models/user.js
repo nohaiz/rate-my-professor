@@ -14,7 +14,7 @@ const userSchema = mongoose.Schema({
   },
   adminAccount: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Admin",
+    ref: "AdminAccount",
     default: null,
     validate: {
       validator: function (v) {
@@ -25,7 +25,7 @@ const userSchema = mongoose.Schema({
   },
   professorAccount: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Professor",
+    ref: "ProfessorAccount",
     default: null,
     validate: {
       validator: function (v) {
@@ -36,7 +36,7 @@ const userSchema = mongoose.Schema({
   },
   studentAccount: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Student",
+    ref: "StudentAccount",
     default: null,
     validate: {
       validator: function (v) {

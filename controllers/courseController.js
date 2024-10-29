@@ -3,7 +3,10 @@ const Course = require('../models/course');
 const textFormatting = require('../utils/textFormatting');
 
 const createCourse = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { title, code, credits, professors } = req.body
 
@@ -28,7 +31,10 @@ const createCourse = async (req, res, next) => {
 }
 
 const indexCourse = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { page = 1, limit = 10 } = req.query;
     const options = {
@@ -56,7 +62,10 @@ const indexCourse = async (req, res, next) => {
 
 
 const getCourse = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { id } = req.params
     const course = await Course.findById(id).populate('professors');;

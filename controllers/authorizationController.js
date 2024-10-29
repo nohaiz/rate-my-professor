@@ -107,6 +107,7 @@ const signIn = async (req, res, next) => {
     let userType = {};
     const studentId = userInDatabase.studentAccount;
     const professorId = userInDatabase.professorAccount;
+    const adminId = userInDatabase.adminAccount;
 
     if (professorId) {
       userType.professorId = professorId;
@@ -115,6 +116,10 @@ const signIn = async (req, res, next) => {
     if (studentId) {
       userType.studentId = studentId;
       userType.role = 'student';
+    }
+    if (adminId) {
+      userType.adminId = adminId;
+      userType.role = 'admin';
     }
 
     const token = createToken(userType);

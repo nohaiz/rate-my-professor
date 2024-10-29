@@ -31,11 +31,11 @@ app.use(morgan("dev"));
 
 app.use('/', authorizationRoute);
 
-// app.use(verifyToken);
+app.use(verifyToken);
 app.use('/admin/courses', adminCourseRoute)
 app.use('/admin/departments', adminDepartmentRoute)
 app.use('/admin/institutes', adminInstituteRoute)
-app.use('/admin/user', adminUserRoute)
+app.use('/admin/users', adminUserRoute)
 
 
 app.listen(port, () => {

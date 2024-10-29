@@ -6,8 +6,11 @@ const Department = require('../models/department');
 const textFormatting = require('../utils/textFormatting');
 
 const createInstitute = async (req, res, next) => {
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
-    // NEEDS TO CHECK FOR ADMIN
     const { name, location, type, departments } = req.body
     const { formattedText } = textFormatting(name);
 
@@ -53,7 +56,10 @@ const createInstitute = async (req, res, next) => {
   }
 }
 const indexInstitute = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { page = 1, limit = 10 } = req.query;
     const options = {
@@ -79,7 +85,10 @@ const indexInstitute = async (req, res, next) => {
   }
 }
 const getInstitute = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { id } = req.params
     const institute = await Institution.findById(id).populate({ path: 'departments', populate: { path: 'courses' } });
@@ -93,7 +102,10 @@ const getInstitute = async (req, res, next) => {
   }
 }
 const updateInstitute = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { id } = req.params;
     const { name, location, type, departments } = req.body
@@ -147,7 +159,10 @@ const updateInstitute = async (req, res, next) => {
 }
 
 const deleteInstitute = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { id } = req.params
     const institution = await Institution.findByIdAndDelete(id)

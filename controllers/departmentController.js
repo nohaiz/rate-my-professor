@@ -6,7 +6,10 @@ const Department = require('../models/department');
 const textFormatting = require('../utils/textFormatting');
 
 const createDepartment = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { name, courses } = req.body
     const { formattedText } = textFormatting(name);
@@ -50,7 +53,10 @@ const createDepartment = async (req, res, next) => {
 }
 
 const indexDepartment = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { page = 1, limit = 10 } = req.query;
     const options = {
@@ -76,7 +82,10 @@ const indexDepartment = async (req, res, next) => {
   }
 }
 const getDepartment = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { id } = req.params
     const department = await Department.findById(id).populate('courses');
@@ -90,7 +99,10 @@ const getDepartment = async (req, res, next) => {
   }
 }
 const updateDepartment = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { id } = req.params;
     const { name, courses } = req.body
@@ -141,7 +153,10 @@ const updateDepartment = async (req, res, next) => {
   }
 }
 const deleteDepartment = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { id } = req.params
     const department = await Department.findByIdAndDelete(id)
