@@ -5,12 +5,14 @@ const bcrypt = require("bcrypt");
 // MODELS
 
 const User = require('../models/user');
-const AdminAccount = require('../models/adminAccount')
+const AdminAccount = require('../models/adminAccount');
+const ProfessorAccount = require("../models/professorAccount");
+const StudentAccount = require("../models/studentAccount");
+
 
 // IMPORTED FUNCTION
 
-const { createToken } = require('../utils/createToken');
-const { signUp } = require('../controllers/authorizationController')
+const { signUp } = require('../controllers/authorizationController');
 
 const createUser = async (req, res, next) => {
 
@@ -57,14 +59,8 @@ const createUser = async (req, res, next) => {
     }
     await User.create([payLoad], { session });
 
-    let userType = {};
-
-    userType.adminId = adminId;
-    userType.role = 'admin';
-
-    const token = createToken(userType);
     await session.commitTransaction();
-    res.status(201).json({ token });
+    res.status(201).json({ message: "User has been successfully created." });
 
   } catch (error) {
     await session.abortTransaction();
@@ -87,6 +83,7 @@ const indexUser = async (req, res, next) => {
     };
 
     const users = await User.find({})
+      .sort({ createdAt: -1 })
       .skip((options.page - 1) * options.limit)
       .limit(options.limit);
 
@@ -135,18 +132,61 @@ const getUser = async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 }
-const updateUser = async (req, res, next) => {
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
 
-}
+const updateUser = async (req, res, next) => {
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(403).json({ error: 'Unauthorized: Admins only can update user profiles.' });
+  }
+  try {
+    const { id } = req.params;
+    const userInDatabase = await User.findById(id);
+    if (!userInDatabase) {
+      return res.status(404).json({ error: "User could not be found." });
+    }
+    if (userInDatabase.adminAccount) {
+      const adminProfile = await AdminAccount.findByIdAndUpdate(userInDatabase.adminAccount, req.body, { new: true, runValidators: true });
+      return res.status(200).json({ adminProfile })
+    }
+    if (userInDatabase.studentAccount) {
+      const studentProfile = await StudentAccount.findByIdAndUpdate(userInDatabase.studentAccount, req.body, { new: true, runValidators: true });
+      return res.status(200).json({ studentProfile })
+    }
+    if (userInDatabase.professorAccount) {
+      const professorProfile = await ProfessorAccount.findByIdAndUpdate(userInDatabase.professorAccount, req.body, { new: true, runValidators: true });
+      return res.status(200).json({ professorProfile })
+    }
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 const deleteUser = async (req, res, next) => {
   if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
+    return res.status(403).json({ error: 'Opps something went wrong' });
+  }
+  try {
+    const { id } = req.params
+    const userInDatabase = await User.findById(id);
+    if (!userInDatabase) {
+      return res.status(404).json({ error: "User could not be found" })
+    }
+
+    if (userInDatabase.adminAccount) {
+      await AdminAccount.findByIdAndDelete(userInDatabase.adminAccount);
+    }
+    if (userInDatabase.professorAccount) {
+      await ProfessorAccount.findByIdAndDelete(userInDatabase.professorAccount);
+    }
+    if (userInDatabase.studentAccount) {
+      await StudentAccount.findByIdAndDelete(userInDatabase.studentAccount);
+    }
+    await User.findByIdAndDelete(id)
+    return res.status(200).json({ message: "User successfully deleted." });
+
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 }
-
-
 
 module.exports = { createUser, indexUser, getUser, updateUser, deleteUser }

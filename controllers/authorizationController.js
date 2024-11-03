@@ -76,11 +76,14 @@ const signUp = async (req, res, next) => {
       userType.studentId = studentId;
       userType.role = 'student';
     }
-
-    const token = createToken(userType);
-    await session.commitTransaction();
-    res.status(201).json({ token });
-
+    if (isProfessor || isStudent) {
+      const token = createToken(userType);
+      await session.commitTransaction();
+      return res.status(201).json({ token });
+    }
+    else {
+      res.status(201).json({ message: "User has been successfully created." });
+    }
   } catch (error) {
     await session.abortTransaction();
     return res.status(500).json({ message: error.message });

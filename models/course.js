@@ -16,10 +16,12 @@ const courseSchema = new mongoose.Schema({
     type: Number,
     min: 1,
     max: 5,
+    required: true,
   },
   professors: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ProfessorAccount',
+    default: [],
   }],
 }, { timestamps: true });
 

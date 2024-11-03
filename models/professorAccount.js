@@ -39,10 +39,12 @@ const professorAccountSchema = new mongoose.Schema({
   bio: {
     type: String,
     trim: true,
+    default: null,
   },
   institution: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Institution",
+    default: null,
   },
   averageRating: {
     type: Number,

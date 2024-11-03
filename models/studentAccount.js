@@ -43,15 +43,18 @@ const studentAccountSchema = mongoose.Schema({
   institution: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Institution",
+    default: null,
   },
-  fieldOfStudy: [{
+  fieldOfStudy: {
     type: String,
     trim: true,
-  }],
+    default: null,
+  },
   GPA: {
     type: Number,
     min: 0.0,
     max: 4.0,
+    default: null,
   },
   reviews: {
     type: [reviewSchema],

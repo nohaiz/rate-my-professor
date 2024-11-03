@@ -19,6 +19,7 @@ const institutionSchema = new mongoose.Schema({
   departments: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Department",
+    default: [],
   }],
 }, { timestamps: true, });
 

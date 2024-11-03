@@ -9,6 +9,7 @@ const departmentSchema = new mongoose.Schema({
   courses: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course',
+    default: [],
   }],
 }, { timestamps: true, });
 
