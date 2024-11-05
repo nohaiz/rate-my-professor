@@ -5,7 +5,7 @@ const router = express.Router();
 
 // CONTROLLERS
 
-const { createUser, indexUser, getUser, updateUser, deleteUser } = require('../controllers/adminUserController');
+const { createUser, indexUser, getUser, updateUser, deleteUser } = require('../controllers/userController');
 
 // ROUTES
 

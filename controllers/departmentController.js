@@ -57,9 +57,6 @@ const indexDepartment = async (req, res, next) => {
 
   try {
 
-    if (req.user.type.role !== 'admin') {
-      return res.status(400).json({ error: 'Opps something went wrong' });
-    }
     const { page = 1, limit = 10 } = req.query;
     const options = {
       page: parseInt(page),
@@ -88,9 +85,6 @@ const getDepartment = async (req, res, next) => {
 
   try {
 
-    if (req.user.type.role !== 'admin') {
-      return res.status(400).json({ error: 'Opps something went wrong' });
-    }
     const { id } = req.params
     const department = await Department.findById(id).populate('courses');
 

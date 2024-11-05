@@ -16,11 +16,16 @@ const port = process.env.PORT ? process.env.PORT : "3000";
 // IMPORTED ROUTES
 
 const authorizationRoute = require('./routes/authorizationRoute.js');
+// ADMIN
 const adminCourseRoute = require('./routes/adminCourseRoute.js');
 const adminDepartmentRoute = require('./routes/adminDepartmentRoute.js');
 const adminInstituteRoute = require('./routes/adminInstituteRoute.js');
-const adminUserRoute = require('./routes/adminUserRoute.js')
-const profileRoute = require('./routes/profileRoute.js')
+const adminUserRoute = require('./routes/adminUserRoute.js');
+// USER
+const courseRoute = require('./routes/courseRoute.js');
+const departmentRoute = require('./routes/departmentRoute.js');
+const instituteRoute = require('./routes/instituteRoute.js');
+const profileRoute = require('./routes/profileRoute.js');
 
 
 // MIDDLEWARE
@@ -33,10 +38,15 @@ app.use(morgan("dev"));
 app.use('/', authorizationRoute);
 
 app.use(verifyToken);
+// ADMIN 
 app.use('/admin/courses', adminCourseRoute)
 app.use('/admin/departments', adminDepartmentRoute)
 app.use('/admin/institutes', adminInstituteRoute)
 app.use('/admin/users', adminUserRoute)
+// USER
+app.use('/courses', courseRoute)
+app.use('/departments', departmentRoute)
+app.use('/institutes', instituteRoute)
 app.use("/profile", profileRoute)
 
 

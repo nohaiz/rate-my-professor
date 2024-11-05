@@ -11,7 +11,7 @@ const StudentAccount = require("../models/studentAccount");
 
 // IMPORTED FUNCTION
 
-const { signUp } = require('../controllers/authorizationController');
+const { signUp } = require('./authorizationController');
 
 const createUser = async (req, res, next) => {
 
@@ -69,6 +69,7 @@ const createUser = async (req, res, next) => {
     session.endSession();
   }
 }
+
 const indexUser = async (req, res, next) => {
 
   try {

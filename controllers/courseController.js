@@ -30,14 +30,10 @@ const createCourse = async (req, res, next) => {
   }
 }
 
-
 const indexCourse = async (req, res, next) => {
 
   try {
 
-    if (req.user.type.role !== 'admin') {
-      return res.status(400).json({ error: 'Opps something went wrong' });
-    }
     const { page = 1, limit = 10 } = req.query;
     const options = {
       page: parseInt(page),
@@ -62,14 +58,10 @@ const indexCourse = async (req, res, next) => {
   }
 }
 
-
 const getCourse = async (req, res, next) => {
 
   try {
 
-    if (req.user.type.role !== 'admin') {
-      return res.status(400).json({ error: 'Opps something went wrong' });
-    }
     const { id } = req.params
     const course = await Course.findById(id).populate('professors');;
 
@@ -119,7 +111,6 @@ const updateCourse = async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 };
-
 
 const deleteCourse = async (req, res, next) => {
 
