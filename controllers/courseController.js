@@ -80,7 +80,10 @@ const getCourse = async (req, res, next) => {
 }
 
 const updateCourse = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { id } = req.params;
     const { title, code, credits, professors } = req.body;
@@ -115,7 +118,10 @@ const updateCourse = async (req, res, next) => {
 
 
 const deleteCourse = async (req, res, next) => {
-  // NEEDS TO CHECK FOR ADMIN
+
+  if (req.user.type.role !== 'admin') {
+    return res.status(400).json({ error: 'Opps something went wrong' });
+  }
   try {
     const { id } = req.params
     const course = await Course.findByIdAndDelete(id)

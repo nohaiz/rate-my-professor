@@ -9,7 +9,6 @@ const AdminAccount = require('../models/adminAccount');
 const ProfessorAccount = require("../models/professorAccount");
 const StudentAccount = require("../models/studentAccount");
 
-
 // IMPORTED FUNCTION
 
 const { signUp } = require('../controllers/authorizationController');
@@ -135,10 +134,10 @@ const getUser = async (req, res, next) => {
 
 const updateUser = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(403).json({ error: 'Unauthorized: Admins only can update user profiles.' });
-  }
   try {
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { id } = req.params;
     const userInDatabase = await User.findById(id);
     if (!userInDatabase) {
@@ -162,10 +161,10 @@ const updateUser = async (req, res, next) => {
 };
 
 const deleteUser = async (req, res, next) => {
-  if (req.user.type.role !== 'admin') {
-    return res.status(403).json({ error: 'Opps something went wrong' });
-  }
   try {
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { id } = req.params
     const userInDatabase = await User.findById(id);
     if (!userInDatabase) {

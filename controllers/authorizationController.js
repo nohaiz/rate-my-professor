@@ -27,7 +27,7 @@ const signUp = async (req, res, next) => {
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(password)) {
-      return res.status(400).json('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character');
+      return res.status(400).json({ error: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character' });
     }
     if (password !== confirmPassword) {
       return res.status(400).json({ error: 'Confirm password and password needs to match' });
@@ -64,16 +64,16 @@ const signUp = async (req, res, next) => {
       professorAccount: professorId ? professorId : null,
       studentAccount: studentId,
     }
-    await User.create([payLoad], { session });
+    const user = await User.create([payLoad], { session });
 
     let userType = {};
 
     if (professorId) {
-      userType.professorId = professorId;
+      userType.Id = user._id;
       userType.role = 'professor';
     }
     if (studentId) {
-      userType.studentId = studentId;
+      userType.Id = user._id;
       userType.role = 'student';
     }
     if (isProfessor || isStudent) {
@@ -113,15 +113,15 @@ const signIn = async (req, res, next) => {
     const adminId = userInDatabase.adminAccount;
 
     if (professorId) {
-      userType.professorId = professorId;
+      userType.Id = userInDatabase._id;
       userType.role = 'professor';
     }
     if (studentId) {
-      userType.studentId = studentId;
+      userType.Id = userInDatabase._id;
       userType.role = 'student';
     }
     if (adminId) {
-      userType.adminId = adminId;
+      userType.Id = userInDatabase._id;
       userType.role = 'admin';
     }
 
