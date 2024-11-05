@@ -4,12 +4,12 @@ const textFormatting = require('../utils/textFormatting');
 
 const createCourse = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
-    const { title, code, credits, professors } = req.body
 
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
+    const { title, code, credits, professors } = req.body
     const { formattedText, formattedCode } = textFormatting(title, code);
 
     const courseInDatabase = await Course.findOne({ code: formattedCode });
@@ -30,12 +30,14 @@ const createCourse = async (req, res, next) => {
   }
 }
 
+
 const indexCourse = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
+
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { page = 1, limit = 10 } = req.query;
     const options = {
       page: parseInt(page),
@@ -63,10 +65,11 @@ const indexCourse = async (req, res, next) => {
 
 const getCourse = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
+
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { id } = req.params
     const course = await Course.findById(id).populate('professors');;
 
@@ -81,10 +84,11 @@ const getCourse = async (req, res, next) => {
 
 const updateCourse = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
+
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { id } = req.params;
     const { title, code, credits, professors } = req.body;
 
@@ -119,10 +123,11 @@ const updateCourse = async (req, res, next) => {
 
 const deleteCourse = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
+
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { id } = req.params
     const course = await Course.findByIdAndDelete(id)
 

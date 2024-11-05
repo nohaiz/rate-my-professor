@@ -15,13 +15,13 @@ const { signUp } = require('../controllers/authorizationController');
 
 const createUser = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
-  const session = await User.startSession();
-  session.startTransaction();
-
   try {
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
+    const session = await User.startSession();
+    session.startTransaction();
+
     const { email, password, confirmPassword, isAdmin, firstName, lastName } = req.body
 
     if (!isAdmin) {
@@ -71,10 +71,10 @@ const createUser = async (req, res, next) => {
 }
 const indexUser = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { page = 1, limit = 10 } = req.query;
     const options = {
       page: parseInt(page),
@@ -112,12 +112,12 @@ const indexUser = async (req, res, next) => {
 
 const getUser = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
-
-  const userId = req.params.id;
   try {
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
+
+    const userId = req.params.id;
     const user = await User.findById(userId)
       .populate('adminAccount')
       .populate('professorAccount')

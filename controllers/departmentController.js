@@ -7,10 +7,11 @@ const textFormatting = require('../utils/textFormatting');
 
 const createDepartment = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
+
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { name, courses } = req.body
     const { formattedText } = textFormatting(name);
     const departmentInDatabase = await Department.findOne({ name: formattedText })
@@ -54,10 +55,11 @@ const createDepartment = async (req, res, next) => {
 
 const indexDepartment = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
+
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { page = 1, limit = 10 } = req.query;
     const options = {
       page: parseInt(page),
@@ -81,12 +83,14 @@ const indexDepartment = async (req, res, next) => {
 
   }
 }
+
 const getDepartment = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
+
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { id } = req.params
     const department = await Department.findById(id).populate('courses');
 
@@ -98,12 +102,14 @@ const getDepartment = async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 }
+
 const updateDepartment = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
+
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { id } = req.params;
     const { name, courses } = req.body
     const { formattedText } = textFormatting(name);
@@ -152,12 +158,14 @@ const updateDepartment = async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 }
+
 const deleteDepartment = async (req, res, next) => {
 
-  if (req.user.type.role !== 'admin') {
-    return res.status(400).json({ error: 'Opps something went wrong' });
-  }
   try {
+
+    if (req.user.type.role !== 'admin') {
+      return res.status(400).json({ error: 'Opps something went wrong' });
+    }
     const { id } = req.params
     const department = await Department.findByIdAndDelete(id)
 

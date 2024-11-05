@@ -13,6 +13,7 @@ const StudentAccount = require("../models/studentAccount");
 const getProfile = async (req, res, next) => {
 
   try {
+
     const id = req.params.id;
     if (req.user.type.Id !== id) {
       return res.status(400).json({ error: 'Opps something went wrong' });
@@ -32,10 +33,12 @@ const getProfile = async (req, res, next) => {
 }
 
 const updateProfile = async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     const { id } = req.params;
     const { password, confirmPassword } = req.body;
 
@@ -94,7 +97,9 @@ const updateProfile = async (req, res, next) => {
 };
 
 const deleteProfile = async (req, res, next) => {
+
   try {
+
     const { id } = req.params;
 
     if (req.user.type.Id !== id) {
@@ -121,4 +126,5 @@ const deleteProfile = async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 }
+
 module.exports = { getProfile, updateProfile, deleteProfile }
