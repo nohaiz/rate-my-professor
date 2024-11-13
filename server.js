@@ -26,6 +26,7 @@ const courseRoute = require('./routes/courseRoute.js');
 const departmentRoute = require('./routes/departmentRoute.js');
 const instituteRoute = require('./routes/instituteRoute.js');
 const profileRoute = require('./routes/profileRoute.js');
+const professorRoute = require('./routes/professorRoute.js')
 
 
 // MIDDLEWARE
@@ -43,11 +44,14 @@ app.use('/admin/courses', adminCourseRoute)
 app.use('/admin/departments', adminDepartmentRoute)
 app.use('/admin/institutes', adminInstituteRoute)
 app.use('/admin/users', adminUserRoute)
-// USER
+// RESOURCE MANAGEMENT
 app.use('/courses', courseRoute)
 app.use('/departments', departmentRoute)
 app.use('/institutes', instituteRoute)
+// USER
+app.use('/professors', professorRoute)
 app.use("/profile", profileRoute)
+
 
 
 app.listen(port, () => {
