@@ -14,8 +14,9 @@ const { createToken } = require('../utils/createToken')
 
 const signUp = async (req, res, next) => {
 
+  let session;
   try {
-    const session = await User.startSession();
+    session = await User.startSession();
     session.startTransaction();
 
     const { email, password, confirmPassword, isProfessor, isStudent, firstName, lastName, institution } = req.body

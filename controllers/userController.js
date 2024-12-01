@@ -15,11 +15,12 @@ const { signUp } = require('./authorizationController');
 
 const createUser = async (req, res, next) => {
 
+  let session;
   try {
     if (req.user.type.role !== 'admin') {
       return res.status(400).json({ error: 'Opps something went wrong' });
     }
-    const session = await User.startSession();
+    session = await User.startSession();
     session.startTransaction();
 
     const { email, password, confirmPassword, isAdmin, firstName, lastName } = req.body

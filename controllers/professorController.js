@@ -13,24 +13,35 @@ const Department = require('../models/department');
 
 const indexProfessor = async (req, res, next) => {
   try {
-    const professors = await ProfessorAccount.find();
+    const { name } = req.query;
+
+    let searchCriteria = {};
+
+    if (name) {
+      searchCriteria = {
+        $or: [
+          { firstName: { $regex: new RegExp(name, 'i') } },
+          { lastName: { $regex: new RegExp(name, 'i') } }
+        ]
+      };
+    }
+
+    const professors = await ProfessorAccount.find(searchCriteria);
+
     if (professors.length === 0) {
       return res.status(404).json({ error: 'No professors available' });
     }
 
-    const professorsData = [];
-
-    for (const professor of professors) {
+    const professorsData = await Promise.all(professors.map(async (professor) => {
       const courses = await Course.find({ professors: professor._id }).select('-professors');
       const departmentIds = courses.map(course => course._id);
-
-      // Find all departments that are associated with the courses
       const departments = await Department.find({ courses: { $in: departmentIds } }).select('-courses');
 
-      professorsData.push({ professor, courses, departments });
-    }
+      return { professor, courses, departments };
+    }));
 
     return res.status(200).json({ professorsData });
+
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -225,8 +236,6 @@ const deleteProfessorReview = async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 };
-
-
 
 
 module.exports = { indexProfessor, getProfessor, createProfessorReview, updateProfessorReview, deleteProfessorReview }

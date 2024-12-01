@@ -58,17 +58,17 @@ const createInstitute = async (req, res, next) => {
 }
 
 const indexInstitute = async (req, res, next) => {
-
   try {
-
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, name = '' } = req.query;
     const options = {
       page: parseInt(page),
       limit: parseInt(limit),
       sort: { name: 1 },
     };
 
-    const institution = await Institution.find({})
+    const filter = name ? { name: { $regex: name, $options: 'i' } } : {};
+
+    const institution = await Institution.find(filter)
       .sort(options.sort)
       .skip((options.page - 1) * options.limit)
       .limit(options.limit)
@@ -77,11 +77,11 @@ const indexInstitute = async (req, res, next) => {
     if (institution.length === 0) {
       return res.status(400).json({ error: 'There are currently no institutions available.' });
     }
-    const totalInstitution = await Institution.countDocuments();
-    return res.status(200).json({ institution, totalInstitution, currentInstitution: options.page })
+    const totalInstitution = await Institution.countDocuments(filter);
+    return res.status(200).json({ institution, totalInstitution, currentInstitution: options.page });
+
   } catch (error) {
     return res.status(500).json({ message: error.message });
-
   }
 }
 

@@ -2,6 +2,8 @@
 
 const express = require("express");
 const router = express.Router();
+const verifyToken = require('../middlewares/verify-token')
+
 
 // CONTROLLERS
 
@@ -13,9 +15,9 @@ router.get('/', indexProfessor);
 
 router.get('/:id', getProfessor);
 
-router.post('/:id/review', createProfessorReview)
+router.post('/:id/review', verifyToken, createProfessorReview)
 
-router.put('/:id/review/:reviewId', updateProfessorReview)
+router.put('/:id/review/:reviewId', verifyToken, updateProfessorReview)
 
 router.delete('/:id/review/:reviewId', deleteProfessorReview)
 

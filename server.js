@@ -36,23 +36,22 @@ app.use(morgan("dev"));
 
 // ROUTES
 
+// PUBLIC ROUTES
 app.use('/', authorizationRoute);
+app.use('/institutes', instituteRoute)
+app.use('/departments', departmentRoute)
+app.use('/courses', courseRoute)
+app.use('/professors', professorRoute)
 
+// PRIVATE ROUTES
 app.use(verifyToken);
 // ADMIN 
 app.use('/admin/courses', adminCourseRoute)
 app.use('/admin/departments', adminDepartmentRoute)
 app.use('/admin/institutes', adminInstituteRoute)
 app.use('/admin/users', adminUserRoute)
-// RESOURCE MANAGEMENT
-app.use('/courses', courseRoute)
-app.use('/departments', departmentRoute)
-app.use('/institutes', instituteRoute)
 // USER
-app.use('/professors', professorRoute)
 app.use("/profile", profileRoute)
-
-
 
 app.listen(port, () => {
   console.log("The express app is ready!");
