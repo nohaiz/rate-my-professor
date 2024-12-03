@@ -13,39 +13,72 @@ const Department = require('../models/department');
 
 const indexProfessor = async (req, res, next) => {
   try {
-    const { name } = req.query;
+    const { page = 1, limit = 10, name } = req.query;
+    const options = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      sort: { firstName: 1, lastName: 1 },
+    };
 
     let searchCriteria = {};
 
     if (name) {
-      searchCriteria = {
-        $or: [
-          { firstName: { $regex: new RegExp(name, 'i') } },
-          { lastName: { $regex: new RegExp(name, 'i') } }
-        ]
-      };
+      const nameParts = name.trim().split(' ');
+
+      if (nameParts.length === 2) {
+        const [firstName, lastName] = nameParts;
+        searchCriteria = {
+          $and: [
+            { firstName: { $regex: firstName, $options: 'i' } },
+            { lastName: { $regex: lastName, $options: 'i' } }
+          ]
+        };
+      } else {
+        searchCriteria = {
+          $or: [
+            { firstName: { $regex: name, $options: 'i' } },
+            { lastName: { $regex: name, $options: 'i' } }
+          ]
+        };
+      }
     }
 
-    const professors = await ProfessorAccount.find(searchCriteria);
+    const professors = await ProfessorAccount.find(searchCriteria)
+      .sort(options.sort)
+      .skip((options.page - 1) * options.limit)
+      .limit(options.limit);
 
     if (professors.length === 0) {
-      return res.status(404).json({ error: 'No professors available' });
+      return res.status(404).json({ error: 'No professors found' });
     }
 
     const professorsData = await Promise.all(professors.map(async (professor) => {
-      const courses = await Course.find({ professors: professor._id }).select('-professors');
-      const departmentIds = courses.map(course => course._id);
-      const departments = await Department.find({ courses: { $in: departmentIds } }).select('-courses');
+      const populatedProfessor = await professor.populate({
+        path: 'institution',
+        select: '-departments'
+      });
 
-      return { professor, courses, departments };
+      const courses = await Course.find({ professors: professor._id }).select('-professors');
+
+      const departmentIds = courses.map(course => course._id);
+      const department = await Department.findOne({ courses: { $in: departmentIds } }).select('-courses');
+
+      return { ...populatedProfessor.toObject(), courses, department };
     }));
 
-    return res.status(200).json({ professorsData });
+    const totalProfessors = await ProfessorAccount.countDocuments(searchCriteria);
+
+    return res.status(200).json({
+      professorsData,
+      totalProfessors,
+      currentPage: options.page,
+    });
 
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
+
 
 const getProfessor = async (req, res, next) => {
 
