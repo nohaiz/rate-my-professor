@@ -181,7 +181,6 @@ const signIn = async (req, res, next) => {
 const verifyOtp = async (req, res) => {
 
   const { email, otp } = req.body;
-  console.log(email, otp)
   try {
 
     const userInDatabase = await User.findOne({ email: email });
@@ -224,8 +223,25 @@ cron.schedule('0 0 * * *', async () => {
     });
 
     if (expiredUsers.length > 0) {
+      const expiredUserIds = expiredUsers.map(user => user._id);
+
       await User.deleteMany(
-        { _id: { $in: expiredUsers.map(user => user._id) } }
+        { _id: { $in: expiredUserIds } }
+      );
+
+      await AdminAccount.updateMany(
+        { users: { $in: expiredUserIds } },
+        { $pull: { users: { $in: expiredUserIds } } }
+      );
+
+      await ProfessorAccount.updateMany(
+        { users: { $in: expiredUserIds } },
+        { $pull: { users: { $in: expiredUserIds } } }
+      );
+
+      await StudentAccount.updateMany(
+        { users: { $in: expiredUserIds } },
+        { $pull: { users: { $in: expiredUserIds } } }
       );
     }
 
@@ -233,6 +249,7 @@ cron.schedule('0 0 * * *', async () => {
     console.error("Error during cron job execution:", error);
   }
 });
+
 
 
 module.exports = { signUp, signIn, verifyOtp }
