@@ -37,7 +37,7 @@ app.use(morgan("dev"));
 // ROUTES
 
 // PUBLIC ROUTES
-app.use('/', authorizationRoute);
+app.use('/auth', authorizationRoute);
 app.use('/institutes', instituteRoute)
 app.use('/departments', departmentRoute)
 app.use('/courses', courseRoute)

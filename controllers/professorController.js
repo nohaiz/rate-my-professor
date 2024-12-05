@@ -79,7 +79,6 @@ const indexProfessor = async (req, res, next) => {
   }
 };
 
-
 const getProfessor = async (req, res, next) => {
 
   try {

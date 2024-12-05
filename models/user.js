@@ -45,6 +45,10 @@ const userSchema = mongoose.Schema({
       message: "Invalid Student ObjectId",
     },
   },
+  '2fa': {
+    secret: { type: String, default: false }, 
+    enabled: { type: Boolean, default: false } 
+  }
 },
   { timestamps: true, }
 )

@@ -1,6 +1,10 @@
 // IMPORTED MODULES
 
 const bcrypt = require("bcrypt");
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
+const cron = require('node-cron');
+
 
 // MODELS
 
@@ -12,6 +16,10 @@ const ProfessorAccount = require('../models/professorAccount');
 
 const { createToken } = require('../utils/createToken')
 
+let tokenCreated
+let userType = {};
+
+
 const signUp = async (req, res, next) => {
 
   let session;
@@ -22,7 +30,24 @@ const signUp = async (req, res, next) => {
     const { email, password, confirmPassword, isProfessor, isStudent, firstName, lastName, institution } = req.body
 
     const userInDatabase = await User.findOne({ email: email });
+
     if (userInDatabase) {
+      if (userInDatabase['2fa'].enabled === false) {
+
+        const secret = speakeasy.generateSecret({ length: 20 });
+        const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+
+        await User.updateOne(
+          { _id: userInDatabase._id },
+          { $set: { '2fa.secret': secret.base32 } },
+        );
+        return res.status(200).json({
+          qrCodeUrl,
+          email: userInDatabase.email,
+          twoFactorEnabled: false,
+          twofaRequired: true,
+        });
+      }
       return res.status(400).json({ error: 'Username already taken' })
     }
 
@@ -65,26 +90,31 @@ const signUp = async (req, res, next) => {
       professorAccount: professorId ? professorId : null,
       studentAccount: studentId,
     }
+
+    const secret = speakeasy.generateSecret({ length: 20 });
+    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+
     const user = await User.create([payLoad], { session });
+    const createdUser = user[0];
 
-    let userType = {};
+    await User.updateOne(
+      { _id: createdUser._id },
+      { $set: { '2fa.secret': secret.base32, '2fa.enabled': false } },
+      { session }
+    );
 
-    if (professorId) {
-      userType.Id = user._id;
-      userType.role = 'professor';
+    if (professorId || studentId) {
+      userType.Id = createdUser._id;
+      userType.role = professorId ? 'professor' : 'student';
     }
-    if (studentId) {
-      userType.Id = user._id;
-      userType.role = 'student';
-    }
-    if (isProfessor || isStudent) {
-      const token = createToken(userType);
-      await session.commitTransaction();
-      return res.status(201).json({ token });
-    }
-    else {
-      res.status(201).json({ message: "User has been successfully created." });
-    }
+
+    await session.commitTransaction();
+    return res.status(201).json({
+      qrCodeUrl,
+      email: createdUser.email,
+      twoFactorEnabled: false,
+      twofaRequired: true,
+    });
   } catch (error) {
     await session.abortTransaction();
     return res.status(500).json({ message: error.message });
@@ -100,12 +130,27 @@ const signIn = async (req, res, next) => {
     const { email, password } = req.body
 
     const userInDatabase = await User.findOne({ email: email });
-
     if (!userInDatabase) {
       return res.status(404).json({ error: 'User not found.' });
     }
     if (!bcrypt.compareSync(password, userInDatabase.hashedPassword)) {
       return res.status(400).json({ error: 'The provided password is incorrect.' });
+    }
+    if (userInDatabase['2fa'].enabled === false) {
+
+      const secret = speakeasy.generateSecret({ length: 20 });
+      const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+
+      await User.updateOne(
+        { _id: userInDatabase._id },
+        { $set: { '2fa.secret': secret.base32 } },
+      );
+      return res.status(200).json({
+        qrCodeUrl,
+        email: userInDatabase.email,
+        twoFactorEnabled: false,
+        twofaRequired: true,
+      });
     }
 
     let userType = {};
@@ -133,4 +178,61 @@ const signIn = async (req, res, next) => {
   }
 }
 
-module.exports = { signUp, signIn }
+const verifyOtp = async (req, res) => {
+
+  const { email, otp } = req.body;
+  console.log(email, otp)
+  try {
+
+    const userInDatabase = await User.findOne({ email: email });
+
+    if (!userInDatabase) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const verified = speakeasy.totp.verify({
+      secret: userInDatabase['2fa'].secret,
+      encoding: 'base32',
+      token: otp,
+    });
+
+    if (!verified) {
+      return res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+    tokenCreated = createToken(userType);
+
+    await User.updateOne(
+      { _id: userInDatabase._id },
+      { $set: { '2fa.enabled': true } }
+    );
+    return res.status(200).json({ tokenCreated });
+
+  } catch (error) {
+    return res.status(500).json({ message: 'An error occurred during OTP verification', error: error.message });
+  }
+};
+
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const expirationTime = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    const expiredUsers = await User.find({
+      '2fa.enabled': false,
+      createdAt: { $lt: new Date(now - expirationTime) },
+    });
+
+    if (expiredUsers.length > 0) {
+      await User.deleteMany(
+        { _id: { $in: expiredUsers.map(user => user._id) } }
+      );
+    }
+
+  } catch (error) {
+    console.error("Error during cron job execution:", error);
+  }
+});
+
+
+module.exports = { signUp, signIn, verifyOtp }
