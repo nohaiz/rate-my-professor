@@ -153,7 +153,6 @@ const signIn = async (req, res, next) => {
       });
     }
 
-    let userType = {};
     const studentId = userInDatabase.studentAccount;
     const professorId = userInDatabase.professorAccount;
     const adminId = userInDatabase.adminAccount;
@@ -171,8 +170,7 @@ const signIn = async (req, res, next) => {
       userType.role = 'admin';
     }
 
-    const token = createToken(userType);
-    res.status(200).json({ token });
+    res.status(200).json({ message: 'ok' });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

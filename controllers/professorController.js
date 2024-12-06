@@ -13,7 +13,7 @@ const Department = require('../models/department');
 
 const indexProfessor = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, name } = req.query;
+    const { page = 1, limit, name } = req.query;
     const options = {
       page: parseInt(page),
       limit: parseInt(limit),

@@ -21,8 +21,12 @@ const getProfile = async (req, res, next) => {
     const user = await User.findById(id)
       .populate('adminAccount')
       .populate('professorAccount')
-      .populate('studentAccount');
-
+      .populate({
+        path: 'studentAccount',
+        populate: {
+          path: 'institution',
+        }
+      })
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -34,9 +38,10 @@ const getProfile = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
 
+  let session
   try {
 
-    const session = await mongoose.startSession();
+    session = await mongoose.startSession();
     session.startTransaction();
 
     const { id } = req.params;
