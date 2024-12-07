@@ -11,36 +11,61 @@ const ProfessorAccount = require("../models/professorAccount");
 const StudentAccount = require("../models/studentAccount");
 
 const getProfile = async (req, res, next) => {
-
   try {
-
     const id = req.params.id;
+
     if (req.user.type.Id !== id) {
-      return res.status(400).json({ error: 'Opps something went wrong' });
+      return res.status(400).json({ error: 'Oops something went wrong' });
     }
+
     const user = await User.findById(id)
       .populate('adminAccount')
-      .populate('professorAccount')
       .populate({
-        path: 'studentAccount',
+        path: 'professorAccount',
         populate: {
           path: 'institution',
+          populate: {
+            path: 'departments',
+            populate: { path: 'courses' }
+          }
         }
       })
+      .select('-hashedPassword')
+      .populate({
+        path: 'studentAccount',
+        populate: { path: 'institution' }
+      })
+      .select('-hashedPassword');
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    if (user.professorAccount && user.professorAccount.institution) {
+      const institution = user.professorAccount.institution;
+
+      institution.departments.forEach(department => {
+        department.courses = department.courses.filter(course =>
+          course.professors &&
+          Array.isArray(course.professors) &&
+          course.professors.some(professor => professor.toString() === id)
+        );
+      });
+
+      institution.departments = institution.departments.filter(department => department.courses.length > 0);
+    }
+
     return res.status(200).json(user);
+
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.error("Error in getProfile:", error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
-}
+};
 
 const updateProfile = async (req, res, next) => {
-
-  let session
+  let session;
   try {
-
     session = await mongoose.startSession();
     session.startTransaction();
 
@@ -56,12 +81,11 @@ const updateProfile = async (req, res, next) => {
       return res.status(404).json({ error: "User could not be found." });
     }
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character' });
-    }
-
     if (password) {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      if (!passwordRegex.test(password)) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character' });
+      }
       if (password !== confirmPassword) {
         return res.status(400).json({ error: 'Passwords do not match' });
       }
@@ -90,9 +114,13 @@ const updateProfile = async (req, res, next) => {
     const updatedUserWithAccounts = await User.findById(updatedUserData._id)
       .populate('adminAccount')
       .populate('professorAccount')
-      .populate('studentAccount');
-
-    return res.status(200).json({ userData: updatedUserWithAccounts });
+      .populate({
+        path: 'studentAccount',
+        populate: {
+          path: 'institution',
+        }
+      });
+    return res.status(200).json({ ...updatedUserWithAccounts._doc });
 
   } catch (error) {
     await session.abortTransaction();
@@ -100,6 +128,7 @@ const updateProfile = async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
 
 const deleteProfile = async (req, res, next) => {
 

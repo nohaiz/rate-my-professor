@@ -10,6 +10,7 @@ const ProfessorAccount = require("../models/professorAccount");
 const StudentAccount = require('../models/studentAccount');
 const Course = require('../models/course');
 const Department = require('../models/department');
+const Institution = require('../models/institution');
 
 const indexProfessor = async (req, res, next) => {
   try {
@@ -269,5 +270,101 @@ const deleteProfessorReview = async (req, res, next) => {
   }
 };
 
+const addProfessorCourse = async (req, res, next) => {
+  const { institution, selectedDepartment, selectedCourse } = req.body;
+  const { id } = req.params;
 
-module.exports = { indexProfessor, getProfessor, createProfessorReview, updateProfessorReview, deleteProfessorReview }
+  if (req.user.type.Id.toString() !== id.toString()) {
+    return res.status(400).json({ error: 'Invalid Professor Id' });
+  }
+
+  try {
+    if (!institution || !selectedDepartment || !selectedCourse) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const withinInstitution = await Institution.findById(institution).populate({
+      path: 'departments',
+      populate: { path: 'courses' }
+    });
+
+    if (!withinInstitution) {
+      return res.status(404).json({ error: 'Institution not found' });
+    }
+
+    const department = withinInstitution.departments.find(dept => dept._id.toString() === selectedDepartment);
+    if (!department) {
+      return res.status(404).json({ error: 'Department not found in this institution' });
+    }
+
+    const course = department.courses.find(course => course._id.toString() === selectedCourse);
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found in the selected department' });
+    }
+
+    const updatedCourse = await Course.findByIdAndUpdate(
+      selectedCourse,
+      { $addToSet: { professors: id } },
+      { new: true }
+    );
+
+    return res.status(200).json({ message: 'Professor successfully added to the course.' });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'An unexpected error occurred' });
+  }
+};
+
+const removeProfessorCourse = async (req, res, next) => {
+  const { institution, selectedDepartment, selectedCourse } = req.body;
+  const { id } = req.params;
+
+  if (req.user.type.Id.toString() !== id.toString()) {
+    return res.status(400).json({ error: 'Invalid Professor Id' });
+  }
+
+  try {
+    if (!institution || !selectedDepartment || !selectedCourse) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+
+    const withinInstitution = await Institution.findById(institution).populate({
+      path: 'departments',
+      populate: { path: 'courses' }
+    });
+
+    if (!withinInstitution) {
+      return res.status(404).json({ error: 'Institution not found' });
+    }
+
+    const department = withinInstitution.departments.find(dept => dept._id.toString() === selectedDepartment);
+    if (!department) {
+      return res.status(404).json({ error: 'Department not found in this institution' });
+    }
+
+    const course = department.courses.find(course => course._id.toString() === selectedCourse);
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found in the selected department' });
+    }
+
+    const updatedCourse = await Course.findByIdAndUpdate(
+      selectedCourse,
+      { $pull: { professors: id } },
+      { new: true }
+    );
+
+    if (!updatedCourse) {
+      return res.status(404).json({ error: 'Failed to remove professor from the course' });
+    }
+
+    return res.status(200).json({ message: 'Professor successfully removed from the course.' });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'An unexpected error occurred' });
+  }
+};
+
+
+module.exports = { indexProfessor, getProfessor, addProfessorCourse, removeProfessorCourse, createProfessorReview, updateProfessorReview, deleteProfessorReview }

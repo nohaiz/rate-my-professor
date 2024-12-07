@@ -57,7 +57,7 @@ const indexDepartment = async (req, res, next) => {
 
   try {
 
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit } = req.query;
     const options = {
       page: parseInt(page),
       limit: parseInt(limit),
