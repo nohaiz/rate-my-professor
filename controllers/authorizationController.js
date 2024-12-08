@@ -59,7 +59,7 @@ const signUp = async (req, res, next) => {
       return res.status(400).json({ error: 'Confirm password and password needs to match' });
     }
     if (isProfessor && isStudent || !isProfessor && !isStudent) {
-      return res.status(400).json({ error: 'The user cannot be both a student and a professor.' });
+      return res.status(400).json({ error: 'Please select a role: student or professor.' });
     }
 
     let studentId;

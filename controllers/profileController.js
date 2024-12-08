@@ -9,6 +9,7 @@ const User = require('../models/user');
 const AdminAccount = require('../models/adminAccount');
 const ProfessorAccount = require("../models/professorAccount");
 const StudentAccount = require("../models/studentAccount");
+const Course = require('../models/course');
 
 const getProfile = async (req, res, next) => {
   try {
@@ -129,7 +130,6 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-
 const deleteProfile = async (req, res, next) => {
 
   try {
@@ -153,6 +153,8 @@ const deleteProfile = async (req, res, next) => {
     if (userInDatabase.studentAccount) {
       await StudentAccount.findByIdAndDelete(userInDatabase.studentAccount);
     }
+    await Course.findOne({ professors: id })
+    
     await User.findByIdAndDelete(id)
     return res.status(200).json({ message: "User successfully deleted." });
 
