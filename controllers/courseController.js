@@ -75,12 +75,11 @@ const getCourse = async (req, res, next) => {
 }
 
 const updateCourse = async (req, res, next) => {
-
   try {
-
     if (req.user.type.role !== 'admin') {
       return res.status(400).json({ error: 'Opps something went wrong' });
     }
+
     const { id } = req.params;
     const { title, code, credits, professors } = req.body;
 
@@ -92,30 +91,33 @@ const updateCourse = async (req, res, next) => {
       return res.status(400).json({ error: 'This course code is already in use.' });
     }
 
+    const updateData = {
+      title: formattedText,
+      code: formattedCode,
+      credits,
+      professors: professors ? professors.map(id => new mongoose.Types.ObjectId(id)) : null,
+    };
+
     const course = await Course.findByIdAndUpdate(
       id,
-      {
-        title: formattedText,
-        code: formattedCode,
-        credits,
-        professors: professors.map(id => new mongoose.Types.ObjectId(id)),
-      },
+      updateData,
       { new: true, runValidators: true }
     );
 
     if (!course) {
       return res.status(404).json({ error: 'Course not found.' });
     }
+
     return res.status(200).json({ course });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
 
+
 const deleteCourse = async (req, res, next) => {
-
   try {
-
+    console.log('hey')
     if (req.user.type.role !== 'admin') {
       return res.status(400).json({ error: 'Opps something went wrong' });
     }

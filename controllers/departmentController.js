@@ -46,7 +46,9 @@ const createDepartment = async (req, res, next) => {
       courses: courses.map(id => new mongoose.Types.ObjectId(id)),
     }
     const department = await Department.create(payLoad);
-    return res.status(201).json({ department })
+    const populatedDepartment = await Department.findById(department._id).populate('courses');
+
+    return res.status(201).json({ department: populatedDepartment })
 
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -154,23 +156,29 @@ const updateDepartment = async (req, res, next) => {
 }
 
 const deleteDepartment = async (req, res, next) => {
-
   try {
-
     if (req.user.type.role !== 'admin') {
-      return res.status(400).json({ error: 'Opps something went wrong' });
+      return res.status(400).json({ error: 'Oops something went wrong' });
     }
-    const { id } = req.params
-    const department = await Department.findByIdAndDelete(id)
+
+    const { id } = req.params;
+    const department = await Department.findById(id);
 
     if (!department) {
-      return res.status(400).json({ error: 'Department not found.' })
+      return res.status(400).json({ error: 'Department not found.' });
     }
-    return res.status(200).json({ message: 'Department deletion was successful.' })
 
+    if (department.courses && department.courses.length > 0) {
+      await Course.deleteMany({ _id: { $in: department.courses } });
+    }
+
+    await Department.findByIdAndDelete(id);
+
+    return res.status(200).json({ message: 'Department and associated courses have been successfully deleted.' });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
-}
+};
+
 
 module.exports = { createDepartment, indexDepartment, getDepartment, updateDepartment, deleteDepartment }
