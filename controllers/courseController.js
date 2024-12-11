@@ -114,10 +114,8 @@ const updateCourse = async (req, res, next) => {
   }
 };
 
-
 const deleteCourse = async (req, res, next) => {
   try {
-    console.log('hey')
     if (req.user.type.role !== 'admin') {
       return res.status(400).json({ error: 'Opps something went wrong' });
     }
@@ -127,6 +125,11 @@ const deleteCourse = async (req, res, next) => {
     if (!course) {
       return res.status(400).json({ error: 'Course not found.' })
     }
+    await Department.updateMany(
+      { courses: id },
+      { $pull: { courses: id } }
+    );
+
     return res.status(200).json({ message: 'Course deletion was successful.' })
 
   } catch (error) {

@@ -4,6 +4,7 @@ const Course = require('../models/course');
 const Department = require('../models/department');
 
 const textFormatting = require('../utils/textFormatting');
+const Institution = require('../models/institution');
 
 const createDepartment = async (req, res, next) => {
 
@@ -107,7 +108,7 @@ const updateDepartment = async (req, res, next) => {
       return res.status(400).json({ error: 'Opps something went wrong' });
     }
     const { id } = req.params;
-    const { name, courses } = req.body
+    const { name, courses } = req.body;
     const { formattedText } = textFormatting(name);
 
     const existingDepartment = await Department.findOne({ name: formattedText });
@@ -144,7 +145,7 @@ const updateDepartment = async (req, res, next) => {
         courses: courses.map(id => new mongoose.Types.ObjectId(id)),
       },
       { new: true, runValidators: true }
-    );
+    ).populate('courses');  
 
     if (!department) {
       return res.status(404).json({ error: 'Department not found.' });
@@ -171,7 +172,12 @@ const deleteDepartment = async (req, res, next) => {
     if (department.courses && department.courses.length > 0) {
       await Course.deleteMany({ _id: { $in: department.courses } });
     }
-
+    const institution = await Institution.find({ departments: id });
+    await Institution.findByIdAndUpdate(
+      institution._id,
+      { $pull: { departments: id } },
+      { new: true }
+    )
     await Department.findByIdAndDelete(id);
 
     return res.status(200).json({ message: 'Department and associated courses have been successfully deleted.' });
