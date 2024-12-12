@@ -145,7 +145,7 @@ const updateDepartment = async (req, res, next) => {
         courses: courses.map(id => new mongoose.Types.ObjectId(id)),
       },
       { new: true, runValidators: true }
-    ).populate('courses');  
+    ).populate('courses');
 
     if (!department) {
       return res.status(404).json({ error: 'Department not found.' });
@@ -167,10 +167,6 @@ const deleteDepartment = async (req, res, next) => {
 
     if (!department) {
       return res.status(400).json({ error: 'Department not found.' });
-    }
-
-    if (department.courses && department.courses.length > 0) {
-      await Course.deleteMany({ _id: { $in: department.courses } });
     }
     const institution = await Institution.find({ departments: id });
     await Institution.findByIdAndUpdate(

@@ -5,11 +5,17 @@ const institutionSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
+    minlength: 3,
+    maxlength: 50,
+    match: /^[a-zA-Z\s]+$/
   },
   location: {
     type: String,
     required: true,
     trim: true,
+    minlength: 3,
+    maxlength: 50,
+    match: /^[a-zA-Z\s]+$/
   },
   type: {
     type: String,

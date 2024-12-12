@@ -5,11 +5,16 @@ const courseSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
+    minlength: 3,
+    maxlength: 50,
+    match: /^[a-zA-Z\s]+$/
   },
   code: {
     type: String,
     required: true,
     unique: true,
+    minlength: 3,
+    maxlength: 10,
     match: /^[^\s]+$/,
   },
   credits: {

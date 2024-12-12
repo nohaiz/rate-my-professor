@@ -119,14 +119,12 @@ const updateInstitute = async (req, res, next) => {
     const { name, location, type, departments } = req.body;
     const { formattedText } = textFormatting(name);
 
-    // Check if the institution name already exists
     const existingInstitution = await Institution.findOne({ name: formattedText });
 
     if (existingInstitution && existingInstitution._id.toString() !== id) {
       return res.status(400).json({ error: 'This institution name is already in use.' });
     }
 
-    // Check for duplicate department IDs
     const uniqueDepartments = new Set();
     const invalidDepartments = [];
 
@@ -138,7 +136,6 @@ const updateInstitute = async (req, res, next) => {
       return res.status(400).json({ error: 'Duplicate departments IDs found.', duplicates: invalidDepartments });
     }
 
-    // Validate that all department IDs are valid
     const departmentInDatabase = await Promise.all(
       departments.map(async (id) => {
         const departmentExist = await Department.findById(id);
@@ -150,7 +147,6 @@ const updateInstitute = async (req, res, next) => {
       return res.status(400).json({ error: 'One or more department IDs are invalid.' });
     }
 
-    // Update the institution
     const institution = await Institution.findByIdAndUpdate(
       id,
       {
@@ -166,7 +162,6 @@ const updateInstitute = async (req, res, next) => {
       return res.status(404).json({ error: 'Institution not found.' });
     }
 
-    // Populate the updated institution with departments and courses
     const populatedInstitution = await institution.populate({
       path: 'departments',
       populate: { path: 'courses' }
@@ -191,17 +186,6 @@ const deleteInstitute = async (req, res, next) => {
 
     if (!institution) {
       return res.status(400).json({ error: 'Institution not found.' });
-    }
-
-    if (institution.departments && institution.departments.length > 0) {
-      await Promise.all(institution.departments.map(async (departmentId) => {
-        const department = await Department.findById(departmentId);
-        if (department && department.courses && department.courses.length > 0) {
-          await Course.deleteMany({ _id: { $in: department.courses } });
-        }
-      }));
-
-      await Department.deleteMany({ _id: { $in: institution.departments } });
     }
 
     return res.status(200).json({ message: 'Institution and associated departments and courses have been successfully deleted.' });
