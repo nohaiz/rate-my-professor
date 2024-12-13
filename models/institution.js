@@ -15,7 +15,7 @@ const institutionSchema = new mongoose.Schema({
     trim: true,
     minlength: 3,
     maxlength: 50,
-    match: /^[a-zA-Z\s]+$/
+    match: /^[a-zA-Z\s,]+$/
   },
   type: {
     type: String,

@@ -9,7 +9,7 @@ const textFormatting = require('../utils/textFormatting');
 const createInstitute = async (req, res, next) => {
   try {
     if (req.user.type.role !== 'admin') {
-      return res.status(400).json({ error: 'Opps something went wrong' });
+      return res.status(400).json({ error: 'Oops something went wrong' });
     }
 
     const { name, location, type, departments } = req.body;
@@ -26,7 +26,7 @@ const createInstitute = async (req, res, next) => {
       uniqueDepartments.has(id) ? invalidDepartments.push(id) : uniqueDepartments.add(id);
     }
     if (invalidDepartments.length > 0) {
-      return res.status(400).json({ error: 'Duplicate departments IDs found.', duplicates: invalidDepartments });
+      return res.status(400).json({ error: 'Duplicate department IDs found.', duplicates: invalidDepartments });
     }
 
     const departmentInDatabase = await Promise.all(
@@ -37,6 +37,27 @@ const createInstitute = async (req, res, next) => {
     );
     if (departmentInDatabase.includes(false)) {
       return res.status(400).json({ error: 'One or more department IDs are invalid.' });
+    }
+
+    const departmentsInOtherInstitutions = await Institution.find({
+      _id: { $ne: institutionInDatabase ? institutionInDatabase._id : null },
+      departments: { $in: departments.map(id => new mongoose.Types.ObjectId(id)) }
+    }).populate('departments');
+
+    if (departmentsInOtherInstitutions.length > 0) {
+      const conflictingDepartments = new Set();
+
+      departmentsInOtherInstitutions.forEach(institution => {
+        institution.departments.forEach(department => {
+          if (departments.includes(department._id.toString())) {
+            conflictingDepartments.add(department.name);
+          }
+        });
+      });
+
+      return res.status(400).json({
+        error: `The following departments are already assigned to other institutions: ${[...conflictingDepartments].join(', ')}.`
+      });
     }
 
     const payLoad = {
@@ -55,7 +76,8 @@ const createInstitute = async (req, res, next) => {
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
-}
+};
+
 
 const indexInstitute = async (req, res, next) => {
   try {
@@ -108,9 +130,7 @@ const getInstitute = async (req, res, next) => {
 }
 
 const updateInstitute = async (req, res, next) => {
-
   try {
-
     if (req.user.type.role !== 'admin') {
       return res.status(400).json({ error: 'Oops something went wrong' });
     }
@@ -133,7 +153,7 @@ const updateInstitute = async (req, res, next) => {
     }
 
     if (invalidDepartments.length > 0) {
-      return res.status(400).json({ error: 'Duplicate departments IDs found.', duplicates: invalidDepartments });
+      return res.status(400).json({ error: 'Duplicate department IDs found.', duplicates: invalidDepartments });
     }
 
     const departmentInDatabase = await Promise.all(
@@ -145,6 +165,27 @@ const updateInstitute = async (req, res, next) => {
 
     if (departmentInDatabase.includes(false)) {
       return res.status(400).json({ error: 'One or more department IDs are invalid.' });
+    }
+
+    const departmentsInOtherInstitutions = await Institution.find({
+      _id: { $ne: id },
+      departments: { $in: departments.map(id => new mongoose.Types.ObjectId(id)) }
+    }).populate('departments');
+
+    if (departmentsInOtherInstitutions.length > 0) {
+      const conflictingDepartments = new Set();
+
+      departmentsInOtherInstitutions.forEach(institution => {
+        institution.departments.forEach(department => {
+          if (departments.includes(department._id.toString())) {
+            conflictingDepartments.add(department.name);
+          }
+        });
+      });
+
+      return res.status(400).json({
+        error: `The following departments are already assigned to other institutions: ${[...conflictingDepartments].join(', ')}.`
+      });
     }
 
     const institution = await Institution.findByIdAndUpdate(

@@ -11,14 +11,15 @@ const createDepartment = async (req, res, next) => {
   try {
 
     if (req.user.type.role !== 'admin') {
-      return res.status(400).json({ error: 'Opps something went wrong' });
+      return res.status(400).json({ error: 'Oops something went wrong' });
     }
-    const { name, courses } = req.body
+    const { name, courses } = req.body;
     const { formattedText } = textFormatting(name);
-    const departmentInDatabase = await Department.findOne({ name: formattedText })
+
+    const departmentInDatabase = await Department.findOne({ name: formattedText });
 
     if (departmentInDatabase) {
-      return res.status(400).json({ error: 'This department has already been added.' })
+      return res.status(400).json({ error: 'This department has already been added.' });
     }
 
     const uniqueCourses = new Set();
@@ -27,6 +28,7 @@ const createDepartment = async (req, res, next) => {
     for (const id of courses) {
       uniqueCourses.has(id) ? invalidCourseIds.push(id) : uniqueCourses.add(id);
     }
+
     if (invalidCourseIds.length > 0) {
       return res.status(400).json({ error: 'Duplicate course IDs found.', duplicates: invalidCourseIds });
     }
@@ -36,25 +38,46 @@ const createDepartment = async (req, res, next) => {
         const courseExist = await Course.findById(id);
         return courseExist ? true : false;
       })
-    )
+    );
 
     if (courseInDatabase.includes(false)) {
       return res.status(400).json({ error: 'One or more course IDs are invalid.' });
     }
 
+    const coursesInOtherDepartments = await Department.find({
+      _id: { $ne: departmentInDatabase ? departmentInDatabase._id : null },
+      courses: { $in: courses.map(id => new mongoose.Types.ObjectId(id)) }
+    }).populate('courses'); 
+
+    if (coursesInOtherDepartments.length > 0) {
+      const conflictingCourses = new Set();
+
+      coursesInOtherDepartments.forEach(department => {
+        department.courses.forEach(course => {
+          if (courses.includes(course._id.toString())) {
+            conflictingCourses.add(course.title); 
+          }
+        });
+      });
+
+      return res.status(400).json({
+        error: `The following courses are already assigned to other departments: ${[...conflictingCourses].join(', ')}.`
+      });
+    }
+
     const payLoad = {
       name: formattedText,
       courses: courses.map(id => new mongoose.Types.ObjectId(id)),
-    }
+    };
     const department = await Department.create(payLoad);
     const populatedDepartment = await Department.findById(department._id).populate('courses');
 
-    return res.status(201).json({ department: populatedDepartment })
+    return res.status(201).json({ department: populatedDepartment });
 
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
-}
+};
 
 const indexDepartment = async (req, res, next) => {
 
@@ -101,12 +124,11 @@ const getDepartment = async (req, res, next) => {
 }
 
 const updateDepartment = async (req, res, next) => {
-
   try {
-
     if (req.user.type.role !== 'admin') {
-      return res.status(400).json({ error: 'Opps something went wrong' });
+      return res.status(400).json({ error: 'Oops something went wrong' });
     }
+
     const { id } = req.params;
     const { name, courses } = req.body;
     const { formattedText } = textFormatting(name);
@@ -120,29 +142,52 @@ const updateDepartment = async (req, res, next) => {
     const uniqueCourses = new Set();
     const invalidCourseIds = [];
 
-    for (const id of courses) {
-      uniqueCourses.has(id) ? invalidCourseIds.push(id) : uniqueCourses.add(id);
+    for (const courseId of courses) {
+      uniqueCourses.has(courseId) ? invalidCourseIds.push(courseId) : uniqueCourses.add(courseId);
     }
+
     if (invalidCourseIds.length > 0) {
       return res.status(400).json({ error: 'Duplicate course IDs found.', duplicates: invalidCourseIds });
     }
 
     const courseInDatabase = await Promise.all(
-      courses.map(async (id) => {
-        const courseExist = await Course.findById(id);
+      courses.map(async (courseId) => {
+        const courseExist = await Course.findById(courseId);
         return courseExist ? true : false;
       })
-    )
+    );
 
     if (courseInDatabase.includes(false)) {
       return res.status(400).json({ error: 'One or more course IDs are invalid.' });
+    }
+
+    const coursesInOtherDepartments = await Department.find({
+      _id: { $ne: id },
+      courses: { $in: courses.map(courseId => new mongoose.Types.ObjectId(courseId)) }
+    }).populate('courses');
+
+
+    if (coursesInOtherDepartments.length > 0) {
+      const conflictingCourses = new Set();
+
+      coursesInOtherDepartments.forEach(department => {
+        department.courses.forEach(course => {
+          if (courses.includes(course._id.toString())) {
+            conflictingCourses.add(course.title);
+          }
+        });
+      });
+
+      return res.status(400).json({
+        error: `The following courses are already assigned to other department: ${[...conflictingCourses].join(', ')}.`
+      });
     }
 
     const department = await Department.findByIdAndUpdate(
       id,
       {
         name: formattedText,
-        courses: courses.map(id => new mongoose.Types.ObjectId(id)),
+        courses: courses.map(courseId => new mongoose.Types.ObjectId(courseId)),
       },
       { new: true, runValidators: true }
     ).populate('courses');
@@ -150,11 +195,13 @@ const updateDepartment = async (req, res, next) => {
     if (!department) {
       return res.status(404).json({ error: 'Department not found.' });
     }
+
     return res.status(200).json({ department });
+
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
-}
+};
 
 const deleteDepartment = async (req, res, next) => {
   try {
