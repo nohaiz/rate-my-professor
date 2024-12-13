@@ -32,13 +32,17 @@ const studentAccountSchema = mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    match: /^[^\s]+$/,
+    minlength: 3,
+    maxlength: 15,
+    match: /^[a-zA-Z]+$/,
   },
   lastName: {
     type: String,
     required: true,
     trim: true,
-    match: /^[^\s]+$/,
+    minlength: 3,
+    maxlength: 15,
+    match: /^[a-zA-Z]+$/,
   },
   institution: {
     type: mongoose.Schema.Types.ObjectId,
@@ -48,6 +52,8 @@ const studentAccountSchema = mongoose.Schema({
   fieldOfStudy: {
     type: String,
     trim: true,
+    maxlength: 30,
+    match: /^[a-zA-Z\s]+$/,
     default: null,
   },
   GPA: {

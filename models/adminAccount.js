@@ -6,13 +6,17 @@ const adminAccountSchema = mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    match: /^[^\s]+$/,
+    minlength: 3,
+    maxlength: 15,
+    match: /^[a-zA-Z]+$/,
   },
   lastName: {
     type: String,
     required: true,
     trim: true,
-    match: /^[^\s]+$/,
+    minlength: 3,
+    maxlength: 15,
+    match: /^[a-zA-Z]+$/,
   },
 }, { timestamps: true, })
 

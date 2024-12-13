@@ -136,11 +136,27 @@ const signIn = async (req, res, next) => {
     if (!bcrypt.compareSync(password, userInDatabase.hashedPassword)) {
       return res.status(400).json({ error: 'The provided password is incorrect.' });
     }
+    const studentId = userInDatabase.studentAccount;
+    const professorId = userInDatabase.professorAccount;
+    const adminId = userInDatabase.adminAccount;
+
     if (userInDatabase['2fa'].enabled === false) {
 
       const secret = speakeasy.generateSecret({ length: 20 });
       const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
 
+      if (professorId) {
+        userType.Id = userInDatabase._id;
+        userType.role = 'professor';
+      }
+      if (studentId) {
+        userType.Id = userInDatabase._id;
+        userType.role = 'student';
+      }
+      if (adminId) {
+        userType.Id = userInDatabase._id;
+        userType.role = 'admin';
+      }
       await User.updateOne(
         { _id: userInDatabase._id },
         { $set: { '2fa.secret': secret.base32 } },
@@ -152,10 +168,6 @@ const signIn = async (req, res, next) => {
         twofaRequired: true,
       });
     }
-
-    const studentId = userInDatabase.studentAccount;
-    const professorId = userInDatabase.professorAccount;
-    const adminId = userInDatabase.adminAccount;
 
     if (professorId) {
       userType.Id = userInDatabase._id;
