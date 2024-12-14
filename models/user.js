@@ -46,9 +46,19 @@ const userSchema = mongoose.Schema({
     },
   },
   '2fa': {
-    secret: { type: String, default: false }, 
-    enabled: { type: Boolean, default: false } 
-  }
+    secret: { type: String, default: false },
+    enabled: { type: Boolean, default: false }
+  },
+  bookMarkedProfessor: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "ProfessorAccount",
+    default: null,
+  }],
+  bookMarkedInstitue: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Institution",
+    default: null,
+  }],
 },
   { timestamps: true, }
 )

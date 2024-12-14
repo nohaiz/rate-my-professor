@@ -20,6 +20,7 @@ const getProfile = async (req, res, next) => {
     }
 
     const user = await User.findById(id)
+      .populate({ path: 'bookMarkedProfessor', populate: 'institution' })
       .populate('adminAccount')
       .populate({
         path: 'professorAccount',
@@ -34,7 +35,9 @@ const getProfile = async (req, res, next) => {
       .select('-hashedPassword')
       .populate({
         path: 'studentAccount',
-        populate: { path: 'institution' }
+        populate: {
+          path: 'institution',
+        }
       })
       .select('-hashedPassword');
 
@@ -154,7 +157,7 @@ const deleteProfile = async (req, res, next) => {
       await StudentAccount.findByIdAndDelete(userInDatabase.studentAccount);
     }
     await Course.findOne({ professors: id })
-    
+
     await User.findByIdAndDelete(id)
     return res.status(200).json({ message: "User successfully deleted." });
 

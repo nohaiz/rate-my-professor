@@ -271,6 +271,7 @@ const deleteProfessorReview = async (req, res, next) => {
 };
 
 const addProfessorCourse = async (req, res, next) => {
+
   const { institution, selectedDepartment, selectedCourse } = req.body;
   const { id } = req.params;
 
@@ -317,6 +318,7 @@ const addProfessorCourse = async (req, res, next) => {
 };
 
 const removeProfessorCourse = async (req, res, next) => {
+  
   const { institution, selectedDepartment, selectedCourse } = req.body;
   const { id } = req.params;
 
@@ -366,5 +368,43 @@ const removeProfessorCourse = async (req, res, next) => {
   }
 };
 
+const addProfessorToBookmarks = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const professor = await ProfessorAccount.findById(id);
+    if (!professor) {
+      return res.status(404).json({ error: 'Professor not found' });
+    }
 
-module.exports = { indexProfessor, getProfessor, addProfessorCourse, removeProfessorCourse, createProfessorReview, updateProfessorReview, deleteProfessorReview }
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: req.user.type.Id },
+      { $push: { bookMarkedProfessor: id } },
+      { new: true }
+    );
+    return res.status(200).json(updatedUser);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const removeProfessorFromBookmarks = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const professor = await ProfessorAccount.findById(id);
+    if (!professor) {
+      return res.status(404).json({ error: 'Professor not found' });
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: req.user.type.Id },
+      { $pull: { bookMarkedProfessor: id } },
+      { new: true }
+    );
+
+    return res.status(200).json(updatedUser);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { indexProfessor, getProfessor, addProfessorCourse, removeProfessorCourse, createProfessorReview, updateProfessorReview, deleteProfessorReview, addProfessorToBookmarks, removeProfessorFromBookmarks }

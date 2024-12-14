@@ -7,7 +7,7 @@ const verifyToken = require('../middlewares/verify-token')
 
 // CONTROLLERS
 
-const { indexProfessor, getProfessor, addProfessorCourse, removeProfessorCourse, createProfessorReview, updateProfessorReview, deleteProfessorReview } = require('../controllers/professorController');
+const { indexProfessor, getProfessor, addProfessorCourse, removeProfessorCourse, createProfessorReview, updateProfessorReview, deleteProfessorReview, addProfessorToBookmarks, removeProfessorFromBookmarks } = require('../controllers/professorController');
 
 // ROUTES
 
@@ -18,6 +18,10 @@ router.get('/:id', getProfessor);
 router.put('/:id', verifyToken, addProfessorCourse);
 
 router.delete('/:id', verifyToken, removeProfessorCourse);
+
+router.put('/:id/bookmark', verifyToken, addProfessorToBookmarks);
+
+router.delete('/:id/bookmark', verifyToken, removeProfessorFromBookmarks);
 
 router.post('/:id/review', verifyToken, createProfessorReview)
 
