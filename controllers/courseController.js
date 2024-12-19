@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const Course = require('../models/course');
 const Department = require('../models/department')
 const ProfessorAccount = require('../models/professorAccount')
-
+const Institution = require('../models/institution');
 
 const textFormatting = require('../utils/textFormatting');
 
@@ -88,9 +88,13 @@ const getCourse = async (req, res, next) => {
 }
 
 const updateCourse = async (req, res, next) => {
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     if (req.user.type.role !== 'admin') {
-      return res.status(400).json({ error: 'Opps something went wrong' });
+      return res.status(400).json({ error: 'Oops, something went wrong' });
     }
 
     const { id } = req.params;
@@ -103,29 +107,50 @@ const updateCourse = async (req, res, next) => {
     if (existingCourse && existingCourse._id.toString() !== id) {
       return res.status(400).json({ error: 'This course code is already in use.' });
     }
+
+    let professorAccounts = [];
+
+    if (professors && professors.length !== 0) {
+      professorAccounts = await ProfessorAccount.find({ _id: { $in: professors } }).session(session);
+
+      if (professorAccounts.length !== professors.length) {
+        return res.status(400).json({ error: 'One or more professor IDs are invalid.' });
+      }
+    }
+
     const updateData = {
       title: formattedText,
       code: formattedCode,
       credits,
-      professors: professors ? professors.map(id => new mongoose.Types.ObjectId(id)) : null,
+      professors: professors ? professors.map(id => new mongoose.Types.ObjectId(id)) : [],
     };
 
-    const course = await Course.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    const updatedCourse = await Course.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
 
-    if (!course) {
+    if (!updatedCourse) {
       return res.status(404).json({ error: 'Course not found.' });
     }
 
-    const populatedCourses = await course.populate('professors')
+    if (updatedCourse.professors.length === 0) {
+      await Department.updateMany(
+        { courses: { $in: [updatedCourse._id] } },
+        { $pull: { courses: updatedCourse._id } }
+      );
+    }
+
+    const populatedCourses = await updatedCourse.populate('professors');
+
+    await session.commitTransaction();
+    session.endSession();
+
     return res.status(200).json({ course: populatedCourses });
   } catch (error) {
-    return res.status(500).json({ message: error });
+    await session.abortTransaction();
+    session.endSession();
+    return res.status(500).json({ message: error.message });
   }
 };
+
 
 const deleteCourse = async (req, res, next) => {
   try {
@@ -146,7 +171,7 @@ const deleteCourse = async (req, res, next) => {
     return res.status(200).json({ message: 'Course deletion was successful.' })
 
   } catch (error) {
-    console.error('Error deleting course:', error); 
+    console.error('Error deleting course:', error);
     return res.status(500).json({ message: error.message });
   }
 }

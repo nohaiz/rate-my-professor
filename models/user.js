@@ -54,11 +54,6 @@ const userSchema = mongoose.Schema({
     ref: "ProfessorAccount",
     default: null,
   }],
-  bookMarkedInstitue: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Institution",
-    default: null,
-  }],
 },
   { timestamps: true, }
 )

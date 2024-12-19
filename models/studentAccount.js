@@ -9,10 +9,6 @@ const reviewSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course',
   },
-  instituteId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Institution',
-  },
   text: {
     type: String,
     required: true,

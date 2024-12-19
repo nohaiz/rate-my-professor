@@ -5,6 +5,7 @@ const Department = require('../models/department');
 const Course = require("../models/course")
 
 const textFormatting = require('../utils/textFormatting');
+const ProfessorAccount = require('../models/professorAccount');
 
 const createInstitute = async (req, res, next) => {
   try {
@@ -118,7 +119,19 @@ const getInstitute = async (req, res, next) => {
   try {
 
     const { id } = req.params
-    const institute = await Institution.findById(id).populate({ path: 'departments', populate: { path: 'courses' } });
+    const institute = await Institution.findById(id)
+      .populate({
+        path: 'departments',
+        populate: {
+          path: 'courses',
+          populate: {
+            path: 'professors', 
+            model: 'ProfessorAccount' 
+          }
+        }
+      });
+
+    console.log(institute);
 
     if (!institute) {
       return res.status(400).json({ error: 'This institution is not available.' });
@@ -148,8 +161,8 @@ const updateInstitute = async (req, res, next) => {
     const uniqueDepartments = new Set();
     const invalidDepartments = [];
 
-    for (const id of departments) {
-      uniqueDepartments.has(id) ? invalidDepartments.push(id) : uniqueDepartments.add(id);
+    for (const deptId of departments) {
+      uniqueDepartments.has(deptId) ? invalidDepartments.push(deptId) : uniqueDepartments.add(deptId);
     }
 
     if (invalidDepartments.length > 0) {
@@ -157,8 +170,8 @@ const updateInstitute = async (req, res, next) => {
     }
 
     const departmentInDatabase = await Promise.all(
-      departments.map(async (id) => {
-        const departmentExist = await Department.findById(id);
+      departments.map(async (deptId) => {
+        const departmentExist = await Department.findById(deptId);
         return departmentExist ? true : false;
       })
     );
@@ -169,7 +182,7 @@ const updateInstitute = async (req, res, next) => {
 
     const departmentsInOtherInstitutions = await Institution.find({
       _id: { $ne: id },
-      departments: { $in: departments.map(id => new mongoose.Types.ObjectId(id)) }
+      departments: { $in: departments.map(deptId => new mongoose.Types.ObjectId(deptId)) }
     }).populate('departments');
 
     if (departmentsInOtherInstitutions.length > 0) {
@@ -188,22 +201,31 @@ const updateInstitute = async (req, res, next) => {
       });
     }
 
-    const institution = await Institution.findByIdAndUpdate(
-      id,
-      {
-        name: formattedText,
-        location: location,
-        type: type,
-        departments: departments.map(id => new mongoose.Types.ObjectId(id)),
-      },
-      { new: true, runValidators: true }
-    );
+    const institution = await Institution.findById(id);
 
     if (!institution) {
       return res.status(404).json({ error: 'Institution not found.' });
     }
 
-    const populatedInstitution = await institution.populate({
+    const departmentsToRemoveCoursesFrom = institution.departments.filter(departmentId =>
+      !departments.includes(departmentId.toString())
+    );
+
+    if (departmentsToRemoveCoursesFrom.length > 0) {
+      await Department.updateMany(
+        { _id: { $in: departmentsToRemoveCoursesFrom } },
+        { $set: { courses: [] } }
+      );
+    }
+
+    institution.name = formattedText;
+    institution.location = location;
+    institution.type = type;
+    institution.departments = departments.map(deptId => new mongoose.Types.ObjectId(deptId));
+
+    const updatedInstitution = await institution.save();
+
+    const populatedInstitution = await updatedInstitution.populate({
       path: 'departments',
       populate: { path: 'courses' }
     });
@@ -214,6 +236,7 @@ const updateInstitute = async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
 
 
 const deleteInstitute = async (req, res, next) => {

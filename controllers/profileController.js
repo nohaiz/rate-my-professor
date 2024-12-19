@@ -22,24 +22,19 @@ const getProfile = async (req, res, next) => {
     const user = await User.findById(id)
       .populate({ path: 'bookMarkedProfessor', populate: 'institution' })
       .populate('adminAccount')
+      .populate({ path: 'professorAccount', populate: { path: 'institution', populate: { path: 'departments', populate: { path: 'courses' } } }, })
+      .select('-hashedPassword')
+      .populate({ path: 'studentAccount', populate: { path: 'institution', } })
       .populate({
-        path: 'professorAccount',
-        populate: {
-          path: 'institution',
-          populate: {
-            path: 'departments',
-            populate: { path: 'courses' }
-          }
-        }
+        path: 'studentAccount', populate: { path: 'institution', },
+        populate: { path: 'reviews', populate: [{ path: 'professorId', model: 'ProfessorAccount' }, { path: 'courseId', model: 'Course' }] }
       })
       .select('-hashedPassword')
       .populate({
-        path: 'studentAccount',
-        populate: {
-          path: 'institution',
-        }
+        path: 'professorAccount', populate: {
+          path: 'reviews', populate: [{ path: 'studentId', model: 'StudentAccount' }, { path: 'courseId', model: 'Course' }]
+        }   
       })
-      .select('-hashedPassword');
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -52,7 +47,7 @@ const getProfile = async (req, res, next) => {
         department.courses = department.courses.filter(course =>
           course.professors &&
           Array.isArray(course.professors) &&
-          course.professors.some(professor => professor.toString() === id)
+          course.professors.some(professor => professor.toString() === user.professorAccount._id.toString())
         );
       });
 

@@ -14,7 +14,21 @@ const reviewSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
+    maxlength: 500,
+    match: /^[\p{L}\p{N}\p{P}\s]+$/gu,
   },
+  comments: [{
+    text: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      match: /^[\p{L}\p{N}\p{P}\s]+$/gu,
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    }
+  }],
   rating: {
     type: Number,
     min: 0,
@@ -44,7 +58,7 @@ const professorAccountSchema = new mongoose.Schema({
     type: String,
     trim: true,
     maxlength: 500,
-    match: /^[a-zA-Z\s]+$/,
+    match: /^[\w\s.,'’“-]+$/i,
     default: null,
   },
   institution: {
