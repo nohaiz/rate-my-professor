@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
+const ProfessorAccount = require('../models/professorAccount');
 const Institution = require("../models/institution")
 const Department = require('../models/department');
 const Course = require("../models/course")
 
 const textFormatting = require('../utils/textFormatting');
-const ProfessorAccount = require('../models/professorAccount');
 
 const createInstitute = async (req, res, next) => {
   try {
@@ -125,13 +125,11 @@ const getInstitute = async (req, res, next) => {
         populate: {
           path: 'courses',
           populate: {
-            path: 'professors', 
-            model: 'ProfessorAccount' 
+            path: 'professors',
+            model: 'ProfessorAccount'
           }
         }
       });
-
-    console.log(institute);
 
     if (!institute) {
       return res.status(400).json({ error: 'This institution is not available.' });

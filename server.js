@@ -28,6 +28,9 @@ const instituteRoute = require('./routes/instituteRoute.js');
 const profileRoute = require('./routes/profileRoute.js');
 const professorRoute = require('./routes/professorRoute.js')
 
+const reportRoute = require('./routes/report.Route.js')
+const searchRoute = require('./routes/search.js')
+
 
 // MIDDLEWARE
 app.use(cors());
@@ -52,6 +55,9 @@ app.use('/admin/institutes', adminInstituteRoute)
 app.use('/admin/users', adminUserRoute)
 // USER
 app.use("/profile", profileRoute)
+app.use("/reports", reportRoute)
+app.use("/searchHistory", searchRoute)
+
 
 app.listen(port, () => {
   console.log("The express app is ready!");

@@ -54,6 +54,38 @@ const userSchema = mongoose.Schema({
     ref: "ProfessorAccount",
     default: null,
   }],
+
+  searchHistory: [{
+    searchText: {
+      type: String,
+    },
+    searchTerm: {
+      type: String,
+      enum: ['institution', 'professor'],
+      required: true,
+    },
+    searchTermId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false,
+      validate: {
+        validator: function (v) {
+          if (v) {
+            if (this.searchTerm === 'institution') {
+              return mongoose.Types.ObjectId.isValid(v);
+            } else if (this.searchTerm === 'professor') {
+              return mongoose.Types.ObjectId.isValid(v);
+            }
+          }
+          return true;
+        },
+      },
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now,
+    },
+  }]
+
 },
   { timestamps: true, }
 )

@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const User = require('../models/user');
 const ProfessorAccount = require("../models/professorAccount");
 const StudentAccount = require('../models/studentAccount');
+
 const Course = require('../models/course');
 const Department = require('../models/department');
 const Institution = require('../models/institution');
@@ -519,7 +520,7 @@ const addProfessorCourse = async (req, res, next) => {
 
 const removeProfessorCourse = async (req, res, next) => {
 
-  const { institution, selectedDepartment, selectedCourse } = req.body;
+  const { institution, selectedCourse } = req.body;
   const { id } = req.params;
 
   if (req.user.type.Id.toString() !== id.toString()) {
@@ -527,27 +528,8 @@ const removeProfessorCourse = async (req, res, next) => {
   }
 
   try {
-    if (!institution || !selectedDepartment || !selectedCourse) {
+    if (!institution || !selectedCourse) {
       return res.status(400).json({ error: 'Missing required parameters' });
-    }
-
-    const withinInstitution = await Institution.findById(institution).populate({
-      path: 'departments',
-      populate: { path: 'courses' }
-    });
-
-    if (!withinInstitution) {
-      return res.status(404).json({ error: 'Institution not found' });
-    }
-
-    const department = withinInstitution.departments.find(dept => dept._id.toString() === selectedDepartment);
-    if (!department) {
-      return res.status(404).json({ error: 'Department not found in this institution' });
-    }
-
-    const course = department.courses.find(course => course._id.toString() === selectedCourse);
-    if (!course) {
-      return res.status(404).json({ error: 'Course not found in the selected department' });
     }
     const professor = await User.findById(id).populate("professorAccount")
 
@@ -556,14 +538,6 @@ const removeProfessorCourse = async (req, res, next) => {
       { $pull: { professors: professor.professorAccount._id } },
       { new: true }
     );
-
-    if (updatedCourse.professors.length === 0) {
-      await Department.updateMany(
-        { courses: { $in: [updatedCourse._id] } },
-        { $pull: { courses: updatedCourse._id } },
-        { new: true }
-      );
-    }
 
     if (!updatedCourse) {
       return res.status(404).json({ error: 'Failed to remove professor from the course' });

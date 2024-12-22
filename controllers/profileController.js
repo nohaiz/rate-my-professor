@@ -33,7 +33,7 @@ const getProfile = async (req, res, next) => {
       .populate({
         path: 'professorAccount', populate: {
           path: 'reviews', populate: [{ path: 'studentId', model: 'StudentAccount' }, { path: 'courseId', model: 'Course' }]
-        }   
+        }
       })
 
     if (!user) {
@@ -69,7 +69,13 @@ const updateProfile = async (req, res, next) => {
     session.startTransaction();
 
     const { id } = req.params;
-    const { password, confirmPassword } = req.body;
+    const { password, confirmPassword, email } = req.body;
+
+    const userExistDatabase = await User.findOne({ email: email });
+
+    if (userExistDatabase) {
+      return res.status(400).json({ error: 'Username already taken' })
+    }
 
     if (req.user.type.Id !== id) {
       return res.status(400).json({ error: 'Oops something went wrong' });

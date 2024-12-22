@@ -58,7 +58,6 @@ const professorAccountSchema = new mongoose.Schema({
     type: String,
     trim: true,
     maxlength: 500,
-    match: /^[\w\s.,'’“-]+$/i,
     default: null,
   },
   institution: {
