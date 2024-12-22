@@ -152,6 +152,10 @@ const deleteProfile = async (req, res, next) => {
       await AdminAccount.findByIdAndDelete(userInDatabase.adminAccount);
     }
     if (userInDatabase.professorAccount) {
+      await Course.updateMany(
+        { professors: id },
+        { $pull: { professors: id } }
+      );
       await ProfessorAccount.findByIdAndDelete(userInDatabase.professorAccount);
     }
     if (userInDatabase.studentAccount) {

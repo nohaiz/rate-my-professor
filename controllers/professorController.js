@@ -109,6 +109,165 @@ const getProfessor = async (req, res, next) => {
   }
 }
 
+const getProfessorReviews = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id)
+      .populate('studentAccount')
+      .populate('professorAccount');
+
+    if (user.studentAccount) {
+      const student = await StudentAccount.findById(user.studentAccount._id)
+        .populate({
+          path: 'reviews.professorId',
+          select: 'firstName lastName averageRating reviewCount',
+        })
+        .populate('reviews.courseId')
+        .populate({
+          path: 'reviews.comments.userId',
+          select: 'firstName lastName email',
+          strictPopulate: false,
+        });
+
+      if (!student || !Array.isArray(student.reviews) || student.reviews.length === 0) {
+        return res.status(404).json({ message: 'No reviews found for this student' });
+      }
+
+      const professorComments = await ProfessorAccount.find().populate({
+        path: 'reviews.comments.userId',
+        select: 'email',
+      });
+
+      return res.status(200).json({
+        userType: 'student',
+        userDetails: {
+          _id: student._id,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          GPA: student.GPA,
+          email: student.email,
+        },
+        reviews: student.reviews.map(review => {
+          const course = review.courseId;
+
+          const professor = professorComments.find(p => p.reviews.some(r => r.courseId.toString() === course._id.toString()));
+
+          if (!professor) {
+            return {
+              professor: {},
+              course: review.courseId ? {
+                _id: review.courseId._id,
+                courseName: review.courseId.title,
+                courseCode: review.courseId.code,
+              } : null,
+              text: review.text,
+              rating: review.rating,
+              createdAt: review.createdAt,
+              comments: [],
+              reviewId: review._id,
+            };
+          }
+
+          const professorReview = professor.reviews.find(professorReview => professorReview._id.toString() === review._id.toString());
+
+          const comments = professorReview ? professorReview.comments : [];
+
+          return {
+            professor: professor ? {
+              _id: professor._id,
+              firstName: professor.firstName,
+              lastName: professor.lastName,
+              averageRating: professor.averageRating,
+              reviewCount: professor.reviewCount,
+              bio: professor.bio,
+              institution: professor.institution,
+            } : {},
+            course: review.courseId ? {
+              _id: review.courseId._id,
+              courseName: review.courseId.title,
+              courseCode: review.courseId.code,
+            } : null,
+            text: review.text,
+            rating: review.rating,
+            createdAt: review.createdAt,
+            comments: comments.map(comment => ({
+              _id: comment._id,
+              text: comment.text,
+              user: {
+                _id: comment.userId._id,
+                email: comment.userId.email,
+              },
+            })) || [],
+            reviewId: review._id,
+          };
+        }),
+      });
+    } else if (user.professorAccount) {
+      const professor = await ProfessorAccount.findById(user.professorAccount._id)
+        .populate({
+          path: 'reviews.studentId',
+          select: 'firstName lastName GPA',
+        })
+        .populate('reviews.courseId')
+        .populate({
+          path: 'reviews.comments.userId',
+          select: 'firstName lastName email',
+          strictPopulate: false,
+        });
+
+      if (!professor || !Array.isArray(professor.reviews) || professor.reviews.length === 0) {
+        return res.status(404).json({ message: 'No reviews found for this professor' });
+      }
+
+      return res.status(200).json({
+        userType: 'professor',
+        userDetails: {
+          _id: professor._id,
+          firstName: professor.firstName,
+          lastName: professor.lastName,
+          averageRating: professor.averageRating,
+          reviewCount: professor.reviewCount,
+        },
+        reviews: professor.reviews.map(review => ({
+          reviewId: review._id,
+          student: review.studentId ? {
+            _id: review.studentId._id,
+            firstName: review.studentId.firstName,
+            lastName: review.studentId.lastName,
+            GPA: review.studentId.GPA,
+            email: review.studentId.email,
+          } : {},
+          course: review.courseId ? {
+            _id: review.courseId._id,
+            courseName: review.courseId.title,
+            courseCode: review.courseId.code,
+          } : null,
+          text: review.text,
+          rating: review.rating,
+          createdAt: review.createdAt,
+          comments: (review.comments || []).map(comment => ({
+            _id: comment._id,
+            user: {
+              _id: comment.userId._id,
+              firstName: comment.userId.firstName,
+              lastName: comment.userId.lastName,
+              email: comment.userId.email,
+            },
+            text: comment.text,
+            createdAt: comment.createdAt,
+          })),
+        })),
+      });
+    } else {
+      return res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 const createProfessorReview = async (req, res, next) => {
 
   try {
@@ -191,7 +350,6 @@ const createProfessorReview = async (req, res, next) => {
     return res.status(500).json({ message: error.message });
   }
 };
-
 
 const updateProfessorReview = async (req, res, next) => {
   try {
@@ -433,7 +591,6 @@ const updateProfessorComment = async (req, res) => {
   }
 };
 
-
 const removeProfessorComment = async (req, res) => {
   try {
     const { id, reviewId, commentId } = req.params;
@@ -590,4 +747,4 @@ const removeProfessorFromBookmarks = async (req, res, next) => {
   }
 };
 
-module.exports = { indexProfessor, getProfessor, addProfessorCourse, removeProfessorCourse, createProfessorReview, updateProfessorReview, deleteProfessorReview, addProfessorToBookmarks, removeProfessorFromBookmarks, addProfessorComment, updateProfessorComment, removeProfessorComment }
+module.exports = { indexProfessor, getProfessor, addProfessorCourse, removeProfessorCourse, getProfessorReviews, createProfessorReview, updateProfessorReview, deleteProfessorReview, addProfessorToBookmarks, removeProfessorFromBookmarks, addProfessorComment, updateProfessorComment, removeProfessorComment }

@@ -31,7 +31,7 @@ router.delete('/:id/review/:reviewId', verifyToken, deleteProfessorReview)
 
 router.post('/:id/reviews/:reviewId/comments', verifyToken, addProfessorComment);
 
-router.put('/:id/reviews/:reviewId/comments/:commentId', verifyToken, updateProfessorComment);  
+router.put('/:id/reviews/:reviewId/comments/:commentId', verifyToken, updateProfessorComment);
 
 router.delete('/:id/reviews/:reviewId/comments/:commentId', verifyToken, removeProfessorComment);
 
