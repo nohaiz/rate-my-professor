@@ -1,6 +1,8 @@
 const User = require('../models/user')
 const Report = require('../models/report');
 const ProfessorAccount = require('../models/professorAccount');
+const StudentAccount = require('../models/studentAccount')
+const Notification = require('../models/notifications')
 
 const indexReviewReport = async (req, res) => {
 
@@ -50,9 +52,10 @@ const createReviewReport = async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    const reviewInDatabase = professor.reviews.map((review => review._id === reviewId))
 
-    if (!reviewInDatabase) {
+    const review = professor.reviews.find(review => review._id.toString() === reviewId);
+
+    if (!review) {
       return res.status(404).json({ error: 'Review not found' });
     }
 
@@ -64,6 +67,28 @@ const createReviewReport = async (req, res) => {
       category: category,
       status: 'pending'
     });
+
+    let targetUserId, notificationMessage;
+
+    targetUserId = review.studentId;
+    notificationMessage = `Your review has been reported.`;
+
+    let targetUser
+    targetUser = await User.findOne({ 'studentAccount': review.studentId });
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Target user not found' });
+    }
+
+    const notification = new Notification({
+      userId: targetUser._id,
+      message: notificationMessage,
+      reference: newReport.reporterId,
+      referenceModel: 'Report',
+    });
+
+    await notification.save();
+
     await newReport.save();
     res.status(201).json(newReport);
   } catch (err) {
@@ -98,7 +123,6 @@ const updateReviewReport = async (req, res) => {
 
     res.status(200).json({ message: 'Report updated successfully', report });
   } catch (err) {
-    console.log(err)
     res.status(500).json({ message: 'Error updating review report', error: err.message });
   }
 };

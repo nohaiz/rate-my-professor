@@ -30,7 +30,7 @@ const professorRoute = require('./routes/professorRoute.js')
 
 const reportRoute = require('./routes/report.Route.js')
 const searchRoute = require('./routes/search.js')
-
+const notificationRoute = require('./routes/notificationRoute.js')
 
 // MIDDLEWARE
 app.use(cors());
@@ -57,6 +57,8 @@ app.use('/admin/users', adminUserRoute)
 app.use("/profile", profileRoute)
 app.use("/reports", reportRoute)
 app.use("/searchHistory", searchRoute)
+app.use("/notifications", notificationRoute)
+
 
 
 app.listen(port, () => {

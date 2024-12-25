@@ -13,6 +13,8 @@ const Course = require('../models/course');
 const Department = require('../models/department');
 const Institution = require('../models/institution');
 
+const Notification = require('../models/notifications')
+
 const indexProfessor = async (req, res, next) => {
   try {
     const { page = 1, limit, name } = req.query;
@@ -170,7 +172,6 @@ const getProfessorReviews = async (req, res, next) => {
           }
 
           const professorReview = professor.reviews.find(professorReview => professorReview._id.toString() === review._id.toString());
-
           const comments = professorReview ? professorReview.comments : [];
 
           return {
@@ -344,6 +345,18 @@ const createProfessorReview = async (req, res, next) => {
 
     await student.studentAccount.save();
     await professor.save();
+
+    const user = await User.find({ professorAccount: professor._id })
+
+    const notification = new Notification({
+      userId: user[0]._id,
+      message: `${student.studentAccount.firstName} has left a review for your course: ${text}`,
+      reference: reviewId,
+      referenceModel: 'Review',
+    });
+
+    await notification.save();
+
     return res.status(200).json(professor);
 
   } catch (error) {
@@ -352,18 +365,15 @@ const createProfessorReview = async (req, res, next) => {
 };
 
 const updateProfessorReview = async (req, res, next) => {
+
   try {
-    if (req.user.type.role !== 'student') {
-      return res.status(400).json({ error: 'Oops, something went wrong' });
-    }
 
     const { id, reviewId } = req.params;
-    const userId = req.user.type.Id;
+    const userId = req.user?.type?.Id;
+    const userRole = req.user?.type?.role;
 
-    const student = await User.findById(userId).populate('studentAccount');
-
-    if (!student.studentAccount.GPA) {
-      return res.status(400).json({ error: "Update your profile GPA before submitting a review." });
+    if (!userId || !userRole) {
+      return res.status(400).json({ error: 'User information is missing' });
     }
 
     const professorInDatabase = await ProfessorAccount.findById(id);
@@ -371,8 +381,20 @@ const updateProfessorReview = async (req, res, next) => {
       return res.status(404).json({ error: 'Professor not found' });
     }
 
+    if (userRole !== 'student' && userRole !== 'admin') {
+      return res.status(400).json({ error: 'Only students or admins can update reviews' });
+    }
+
+    let student = null;
+    if (userRole === 'student') {
+      student = await User.findById(userId).populate('studentAccount');
+      if (!student || !student.studentAccount.GPA) {
+        return res.status(400).json({ error: "Update your profile GPA before submitting a review." });
+      }
+    }
+
     const reviewInDatabase = professorInDatabase.reviews.find((review) =>
-      review._id.toString() === reviewId && review.studentId.toString() === student.studentAccount._id.toString()
+      review._id.toString() === reviewId && (userRole === 'admin' || review.studentId.toString() === student?.studentAccount._id.toString())
     );
 
     if (!reviewInDatabase) {
@@ -381,62 +403,77 @@ const updateProfessorReview = async (req, res, next) => {
 
     const { text, rating } = req.body;
 
-    if (!text || !rating) {
-      return res.status(400).json({ error: 'Please fill in all the fields' });
+    if (userRole === 'admin') {
+      if (!text) {
+        return res.status(400).json({ error: 'Please provide new text for the review' });
+      }
+      reviewInDatabase.text = text;
     }
 
-    const oldRating = reviewInDatabase.rating;
-    const currentReviewCount = professorInDatabase.reviewCount || 0;
-    const currentAverageRating = professorInDatabase.averageRating || 0;
+    if (userRole === 'student') {
+      if (!text || !rating) {
+        return res.status(400).json({ error: 'Please fill in all the fields' });
+      }
 
-    const normalizedGPA = (student.studentAccount.GPA / 4) * 5;
-    const weightedRating = normalizedGPA * rating;
+      const oldRating = reviewInDatabase.rating;
+      const currentReviewCount = professorInDatabase.reviewCount || 0;
+      const currentAverageRating = professorInDatabase.averageRating || 0;
 
-    const totalRating = (currentAverageRating * currentReviewCount) - (normalizedGPA * oldRating) + weightedRating;
+      const normalizedGPA = (student.studentAccount.GPA / 4) * 5;
+      const weightedRating = normalizedGPA * rating;
 
-    const newAverageRating = totalRating / currentReviewCount;
-    const finalAverageRating = Math.min(newAverageRating, 5);
+      const totalRating = (currentAverageRating * currentReviewCount) - (normalizedGPA * oldRating) + weightedRating;
+      const newAverageRating = totalRating / currentReviewCount;
+      const finalAverageRating = Math.min(newAverageRating, 5);
 
-    reviewInDatabase.text = text;
-    reviewInDatabase.rating = rating;
+      reviewInDatabase.text = text;
+      reviewInDatabase.rating = rating;
 
-    professorInDatabase.averageRating = finalAverageRating;
+      professorInDatabase.averageRating = finalAverageRating;
 
-    const studentReview = student.studentAccount.reviews.find(
-      (review) => review._id.toString() === reviewId && review.professorId.toString() === id
-    );
+      const studentReview = student.studentAccount.reviews.find(
+        (review) => review._id.toString() === reviewId && review.professorId.toString() === id
+      );
 
-    if (!studentReview) {
-      return res.status(404).json({ error: 'Student review not found' });
+      if (!studentReview) {
+        return res.status(404).json({ error: 'Student review not found' });
+      }
+
+      studentReview.text = text;
+      studentReview.rating = rating;
+      await student.studentAccount.save();
+
+    } else {
+      student = await StudentAccount.findById(reviewInDatabase.studentId)
+      const studentReview = student.reviews.find(
+        (review) => review._id.toString() === reviewId && review.professorId.toString() === id
+      );
+
+      if (!studentReview) {
+        return res.status(404).json({ error: 'Student review not found' });
+      }
+      studentReview.text = text;
+      await student.save();
     }
-
-    studentReview.text = text;
-    studentReview.rating = rating;
 
     await professorInDatabase.save();
-    await student.studentAccount.save();
 
     return res.status(200).json(professorInDatabase);
 
   } catch (error) {
+    console.error(error);
     return res.status(500).json({ message: error.message });
   }
 };
 
 const deleteProfessorReview = async (req, res, next) => {
   try {
-    if (req.user.type.role !== 'student') {
-      return res.status(400).json({ error: 'Only students can delete reviews' });
-    }
-
     const { id, reviewId } = req.params;
     const userId = req.user.type.Id;
+    const userRole = req.user.type.role;
 
-    const user = await User.findById(userId).populate('studentAccount');
-    const student = user.studentAccount;
-
-    if (!student) {
-      return res.status(404).json({ error: 'Student not found' });
+    if (userRole !== 'student' && userRole !== 'admin') {
+      return res.status(400).json({ error: 'Only students or admins can delete reviews' });
     }
 
     const professorInDatabase = await ProfessorAccount.findById(id);
@@ -444,114 +481,150 @@ const deleteProfessorReview = async (req, res, next) => {
       return res.status(404).json({ error: 'Professor not found' });
     }
 
+    let student = null;
+    if (userRole === 'student') {
+      student = await User.findById(userId).populate('studentAccount');
+      if (!student || !student.studentAccount) {
+        return res.status(404).json({ error: 'Student not found' });
+      }
+    }
+
     const professorReview = professorInDatabase.reviews.find(
-      (review) => {
-        return review._id.toString() === reviewId && review.studentId.toString() === student._id.toString();
-      }
+      (review) =>
+        review._id.toString() === reviewId &&
+        (userRole === 'admin' || review.studentId.equals(student?.studentAccount._id))
     );
 
-    const studentReview = student.reviews.find(
-      (review) => {
-        return review._id.toString() === reviewId && review.professorId.toString() === professorInDatabase._id.toString();
-      }
-    );
-
-    if (!professorReview || !studentReview) {
+    if (!professorReview) {
       return res.status(404).json({ error: 'Review not found or you are not authorized to delete this review.' });
     }
 
-    const oldProfessorRating = professorReview.rating;
     const currentProfessorReviewCount = professorInDatabase.reviewCount || 0;
-    const currentProfessorAverageRating = professorInDatabase.averageRating || 0;
 
-    await ProfessorAccount.updateOne(
-      { _id: id },
-      { $pull: { reviews: { _id: reviewId, studentId: student._id } } }
-    );
+    const professorUpdates = [];
+    const studentUpdates = [];
 
-    await StudentAccount.updateOne(
-      { _id: student._id },
-      { $pull: { reviews: { _id: reviewId, professorId: id } } }
-    );
+    professorUpdates.push({
+      updateOne: {
+        filter: { _id: id },
+        update: { $pull: { reviews: { _id: reviewId } } },
+      },
+    });
+    if (userRole === 'admin') {
+      const studentAccount = await StudentAccount.findOne({ _id: professorReview.studentId });
+      if (studentAccount) {
+        const updatedReviewCount = Math.max(studentAccount.reviewCount - 1, 0);
+        studentUpdates.push({
+          updateOne: {
+            filter: { _id: professorReview.studentId },
+            update: {
+              $set: { reviewCount: updatedReviewCount },
+              $pull: { reviews: { _id: reviewId, professorId: id } }
+            },
+          },
+        });
+      }
+    } else {
+      const updatedReviewCount = Math.max(student.studentAccount.reviewCount - 1, 0);
+      studentUpdates.push({
+        updateOne: {
+          filter: { _id: student.studentAccount._id },
+          update: {
+            $set: { reviewCount: updatedReviewCount },
+            $pull: { reviews: { _id: reviewId, professorId: id } }
+          },
+        },
+      });
+    }
 
-    const newProfessorReviewCount = currentProfessorReviewCount - 1;
+    const newProfessorReviewCount = Math.max(currentProfessorReviewCount - 1, 0);
     let newProfessorAverageRating = 0;
 
     if (newProfessorReviewCount > 0) {
-      const totalProfessorRating = currentProfessorAverageRating * currentProfessorReviewCount - oldProfessorRating;
+      const totalProfessorRating = professorInDatabase.reviews.reduce((total, review) => total + review.rating, 0);
       newProfessorAverageRating = totalProfessorRating / newProfessorReviewCount;
     }
 
-    await ProfessorAccount.updateOne(
-      { _id: id },
-      {
-        $set: {
-          reviewCount: newProfessorReviewCount,
-          averageRating: Math.max(0, Math.min(newProfessorAverageRating, 5)),
+    professorUpdates.push({
+      updateOne: {
+        filter: { _id: id },
+        update: {
+          $set: {
+            reviewCount: newProfessorReviewCount,
+            averageRating: Math.max(0, Math.min(newProfessorAverageRating, 5)),
+          },
         },
-      }
-    );
+      },
+    });
 
-    await StudentAccount.updateOne(
-      { _id: student._id },
-      { $set: { reviewCount: student.reviewCount - 1 } }
-    );
+    await ProfessorAccount.bulkWrite(professorUpdates);
+    if (studentUpdates.length > 0) {
+      await StudentAccount.bulkWrite(studentUpdates);
+    }
 
-    return res.status(200).json({ message: 'Both reviews deleted successfully' });
-
+    return res.status(200).json({ message: 'Review deleted successfully' });
   } catch (error) {
     console.error("Error occurred during review deletion:", error);
     return res.status(500).json({ message: 'An error occurred while deleting the review', error: error.message });
   }
 };
 
+
 const addProfessorComment = async (req, res) => {
 
   try {
 
     const { id, reviewId } = req.params;
+    const { comment } = req.body;
     const userId = req.user.type.Id;
+    const userRole = req.user.type.role;
 
     const professor = await ProfessorAccount.findById(id);
-    if (!professor) {
-      return res.status(404).json({ error: 'Professor not found' });
-    }
+    if (!professor) return res.status(404).json({ error: 'Professor not found' });
 
     const review = professor.reviews.find(review => review._id.toString() === reviewId);
-    if (!review) {
-      return res.status(404).json({ error: 'Review not found' });
-    }
+    if (!review) return res.status(404).json({ error: 'Review not found' });
 
-    const { comment } = req.body;
-    if (!comment || typeof comment !== 'string') {
-      return res.status(400).json({ error: 'Please provide a valid comment text.' });
-    }
+    if (!comment || typeof comment !== 'string') return res.status(400).json({ error: 'Invalid comment' });
 
-    const newComment = {
-      text: comment,
-      userId,
-    };
-
+    const newComment = { _id: new mongoose.Types.ObjectId(), text: comment, userId };
     review.comments.push(newComment);
-
     await professor.save();
 
-    return res.status(200).json({
-      message: 'Comment added successfully',
-      review: review,
-    });
+    const userType = await User.findById(userId).populate('professorAccount').populate('studentAccount');
+    if (review?.studentId.toString() === userType?.studentAccount?._id.toString()) {
+      return res.status(200).json({ message: 'Comment added successfully', review });
+    }
 
+    const commenterName = userRole === 'professor'
+      ? `${userType.professorAccount.firstName} ${userType.professorAccount.lastName}`
+      : `${userType.studentAccount.firstName} ${userType.studentAccount.lastName}`;
+
+    const notificationMessage = userRole === 'professor'
+      ? `Professor ${commenterName} commented on your review.`
+      : `Your review received a comment from ${commenterName}.`;
+
+    const targetUser = await User.findOne({ 'studentAccount': review.studentId });
+
+    const notification = new Notification({
+      userId: targetUser._id, message: notificationMessage, reference: newComment._id, referenceModel: 'Comment'
+    });
+    await notification.save();
+
+    return res.status(200).json({ message: 'Comment added successfully', review });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
 
+
 const updateProfessorComment = async (req, res) => {
   try {
     const { id, reviewId, commentId } = req.params;
     const { comment } = req.body;
     const userId = req.user.type.Id;
+    const userRole = req.user.type.role;
 
     const professor = await ProfessorAccount.findById(id);
     if (!professor) {
@@ -568,15 +641,20 @@ const updateProfessorComment = async (req, res) => {
       return res.status(404).json({ error: 'Comment not found' });
     }
 
-    if (commentToUpdate.userId.toString() !== userId.toString()) {
-      return res.status(403).json({ error: 'You can only update your own comments' });
-    }
+    if (userRole === 'admin') {
+      commentToUpdate.text = comment.text;
+    } else {
 
-    if (!comment || typeof comment.text !== 'string' || comment.text.trim() === '') {
-      return res.status(400).json({ error: 'Please provide a valid comment text.' });
-    }
+      if (commentToUpdate.userId.toString() !== userId.toString()) {
+        return res.status(403).json({ error: 'You can only update your own comments' });
+      }
 
-    commentToUpdate.text = comment.text;
+      if (!comment || typeof comment.text !== 'string' || comment.text.trim() === '') {
+        return res.status(400).json({ error: 'Please provide a valid comment text.' });
+      }
+
+      commentToUpdate.text = comment.text;
+    }
 
     await professor.save();
 
@@ -591,10 +669,12 @@ const updateProfessorComment = async (req, res) => {
   }
 };
 
+
 const removeProfessorComment = async (req, res) => {
   try {
     const { id, reviewId, commentId } = req.params;
     const userId = req.user.type.Id;
+    const userRole = req.user.type.role;
 
     const professor = await ProfessorAccount.findById(id);
     if (!professor) {
@@ -611,11 +691,14 @@ const removeProfessorComment = async (req, res) => {
       return res.status(404).json({ error: 'Comment not found' });
     }
 
-    if (review.comments[commentIndex].userId.toString() !== userId) {
-      return res.status(403).json({ error: 'You are not authorized to delete this comment' });
+    if (userRole === 'admin') {
+      review.comments.splice(commentIndex, 1);
+    } else {
+      if (review.comments[commentIndex].userId.toString() !== userId) {
+        return res.status(403).json({ error: 'You are not authorized to delete this comment' });
+      }
+      review.comments.splice(commentIndex, 1);
     }
-
-    review.comments.splice(commentIndex, 1);
 
     await professor.save();
 
