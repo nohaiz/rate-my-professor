@@ -232,7 +232,10 @@ const deleteUser = async (req, res, next) => {
     }
     if (userInDatabase.professorAccount) {
       await ProfessorAccount.findByIdAndDelete(userInDatabase.professorAccount);
-      await Course.deleteMany({ professors: userInDatabase.professorAccount })
+      await Course.updateMany(
+        { professors: userInDatabase.professorAccount },
+        { $pull: { professors: userInDatabase.professorAccount } }
+      );
     }
     if (userInDatabase.studentAccount) {
       await StudentAccount.findByIdAndDelete(userInDatabase.studentAccount);

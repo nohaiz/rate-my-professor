@@ -31,6 +31,7 @@ const professorRoute = require('./routes/professorRoute.js')
 const reportRoute = require('./routes/report.Route.js')
 const searchRoute = require('./routes/search.js')
 const notificationRoute = require('./routes/notificationRoute.js')
+const adminAuditTrailRoute = require('./routes/adminAuditTrailRoute.js')
 
 // MIDDLEWARE
 app.use(cors());
@@ -53,6 +54,7 @@ app.use('/admin/courses', adminCourseRoute)
 app.use('/admin/departments', adminDepartmentRoute)
 app.use('/admin/institutes', adminInstituteRoute)
 app.use('/admin/users', adminUserRoute)
+app.use('/admin/audit-trails', adminAuditTrailRoute)
 // USER
 app.use("/profile", profileRoute)
 app.use("/reports", reportRoute)

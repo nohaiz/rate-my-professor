@@ -17,9 +17,6 @@ const getAllInstitutesSearchHistory = async (req, res, next) => {
     const institutionHistory = user.searchHistory.filter(history => history.searchTerm === 'institution')
       .sort((a, b) => b.timestamp - a.timestamp);
 
-    // const institutionIds = institutionHistory.map(history => history.searchTermId);
-    // const institutions = await Institution.find({ '_id': { $in: institutionIds } }).select('name');
-
     res.status(200).json({ institutionHistory });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -107,9 +104,6 @@ const getAllProfessorsSearchHistory = async (req, res, next) => {
 
     const professorHistory = user.searchHistory.filter(history => history.searchTerm === 'professor')
       .sort((a, b) => b.timestamp - a.timestamp);
-    // const professorIds = professorHistory.map(history => history.searchTermId);
-    // const professors = await Institution.find({ '_id': { $in: professorIds } }).select('name');
-
     res.status(200).json({ professorHistory });
   } catch (error) {
     res.status(500).json({ error: error.message });

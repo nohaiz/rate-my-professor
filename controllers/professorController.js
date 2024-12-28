@@ -350,7 +350,7 @@ const createProfessorReview = async (req, res, next) => {
 
     const notification = new Notification({
       userId: user[0]._id,
-      message: `${student.studentAccount.firstName} has left a review for your course: ${text}`,
+      message: `${student.studentAccount.firstName} has left a review for your course.`,
       reference: reviewId,
       referenceModel: 'Review',
     });
